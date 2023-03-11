@@ -2,5 +2,5 @@
 public class AppSettings
 {
     public string ChatGPTApiKey { get; set; } = null!;
-    public int ChatGPTMaxTokens { get; set; }
+    public int ContextMaxLength { get; set; }
 }

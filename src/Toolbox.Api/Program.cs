@@ -17,22 +17,15 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 
-builder.Services.AddScoped(serviceProvider =>
+builder.Services.AddScoped(serviceProvider => new OpenAIService(new OpenAiOptions()
 {
-    return new OpenAIService(new OpenAiOptions()
-    {
-        ApiKey = (serviceProvider.GetService<IOptions<AppSettings>>())?.Value.ChatGPTApiKey ??
-                 throw new ArgumentNullException()
-    });
-});
-builder.Services.AddScoped(serviceProvider =>
+    ApiKey = (serviceProvider.GetService<IOptions<AppSettings>>())?.Value.ChatGPTApiKey ??
+             throw new ArgumentNullException()
+}));
+builder.Services.AddScoped(serviceProvider => new CompletionCreateRequest()
 {
-    return new CompletionCreateRequest()
-    {
-        Temperature = 0,
-        MaxTokens = (serviceProvider.GetService<IOptions<AppSettings>>())?.Value.ChatGPTMaxTokens ??
-                    throw new ArgumentNullException()
-    };
+    Temperature = 0,
+    MaxTokens = 1000
 });
 
 var app = builder.Build();
