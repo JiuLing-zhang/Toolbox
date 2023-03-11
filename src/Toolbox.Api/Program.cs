@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Options;
-using Microsoft.Net.Http.Headers;
 using OpenAI.GPT3;
 using OpenAI.GPT3.Managers;
 using OpenAI.GPT3.ObjectModels.RequestModels;
@@ -28,6 +27,16 @@ builder.Services.AddScoped(serviceProvider => new CompletionCreateRequest()
     MaxTokens = 1000
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("MyPolicy", x =>
+    {
+        x.WithOrigins("https://localhost:7161")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -44,5 +53,5 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.UseCors("MyPolicy");
 app.Run();

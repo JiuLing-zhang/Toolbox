@@ -3,9 +3,10 @@ using Microsoft.Extensions.Options;
 using OpenAI.GPT3.Managers;
 using OpenAI.GPT3.ObjectModels.RequestModels;
 using Toolbox.Api.Models;
+using Toolbox.Api.Models.Request;
 
 namespace Toolbox.Api.Controllers;
-[Route("[controller]")]
+[Route("chatgpt")]
 [ApiController]
 public class ChatGPTController : ControllerBase
 {
@@ -19,14 +20,14 @@ public class ChatGPTController : ControllerBase
         _appSettings = appSettingsOptions.Value;
     }
 
-    [HttpPost]
-    public async Task<IActionResult> DoChat(string prompt)
+    [HttpPost("do-chat")]
+    public async Task<IActionResult> DoChat(ChatGPTRequest request)
     {
-        if (prompt.Length > _appSettings.ContextMaxLength)
+        if (request.Prompt.Length > _appSettings.ContextMaxLength)
         {
             return Ok(new ApiResponse(1, "语境有点长了，请刷新页面后重新玩耍~~~~"));
         }
-        _createRequest.Prompt = prompt;
+        _createRequest.Prompt = request.Prompt;
         var res = await _service.Completions.CreateCompletion(_createRequest, OpenAI.GPT3.ObjectModels.Models.TextDavinciV3);
 
         if (!res.Successful)
