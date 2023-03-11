@@ -1,0 +1,45 @@
+@using Markdig;
+@inject IJSRuntime JS
+<div class="line-numbers">
+    @{
+        if (_isXss)
+        {
+            @_postHtmlContent.ToString()
+        }
+        else
+        {
+            @_postHtmlContent
+        }
+    }
+</div>
+
+@code {
+    private bool _isXss;
+    private MarkupString _postHtmlContent;
+
+    [Parameter]
+    public string? Content { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Content == null)
+        {
+            throw new ArgumentNullException();
+        }
+        var htmlData = Markdown.ToHtml(Content);
+        _postHtmlContent = (MarkupString)htmlData;
+        if (htmlData.Contains("<script") || htmlData.Contains("<link"))
+        {
+            _isXss = true;
+        }
+        else
+        {
+            _isXss = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("Prism.highlightAll");
+    }
+}

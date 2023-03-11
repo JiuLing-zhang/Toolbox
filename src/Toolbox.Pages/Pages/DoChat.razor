@@ -1,0 +1,135 @@
+﻿@page "/chat"
+
+@using JiuLing.CommonLibs.ExtensionMethods;
+@using Toolbox.Pages.Models
+
+@inject IHttpClientFactory HttpClientFactory;
+@inject NavigationManager NavigationManager
+<PageTitle>Chat</PageTitle>
+<div class="container">
+    <div class="body">
+        @{
+            if (_isSaveContext)
+            {
+                <div class="alert-box">
+                    <p>当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</p>
+                </div>
+            }
+            foreach (var history in _histories)
+            {
+                <div class="question-item">
+                    <div class="speech-content">@history.Question</div>
+                    @if (history.Answer.IsEmpty())
+                    {
+                        <div class="loading">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    }
+                    else
+                    {
+                        <MarkdownComponent Content="@history.Answer" />
+                    }
+                </div>
+            }
+        }
+    </div>
+    <div class="footer">
+        <input class="search-input" placeholder="想聊点什么呢？" @bind="_searchKey" @onkeyup="KeyUp" />
+        <input class="search-button" type="button" value="提问" @onclick="BeginChat" />
+        <input type="checkbox" class="switch" checked="@_isSaveContext" @onchange="SaveContextChanged">
+        <span>连续对话</span>
+    </div>
+</div>
+
+@code {
+
+    private bool _isLoading;
+    private string _searchKey = "";
+    private bool _isSaveContext = true;
+    private List<QuestionAndAnswer> _histories = null!;
+
+    protected override Task OnInitializedAsync()
+    {
+        _histories = new List<QuestionAndAnswer>();
+
+        var uri = new Uri(NavigationManager.Uri);
+        var isSaveContext = System.Web.HttpUtility.ParseQueryString(uri.Query).Get("SaveContext");
+        if (!bool.TryParse(isSaveContext, out _isSaveContext))
+        {
+            _isSaveContext = false;
+        }
+        return base.OnInitializedAsync();
+    }
+
+    private void KeyUp(KeyboardEventArgs args)
+    {
+        if (args.Key != "Enter")
+        {
+            return;
+        }
+        InvokeAsync(RequestOpenAI);
+    }
+
+    private void SaveContextChanged(ChangeEventArgs e)
+    {
+        NavigationManager.NavigateTo($"/do-chat?SaveContext={Convert.ToBoolean(e.Value)}", true);
+    }
+
+    private async void BeginChat()
+    {
+        await RequestOpenAI();
+    }
+
+    private async Task RequestOpenAI()
+    {
+        if (_searchKey.IsEmpty())
+        {
+            return;
+        }
+        if (_isLoading)
+        {
+            return;
+        }
+        _isLoading = true;
+
+        string question = _isSaveContext ? $"提问:{_searchKey}" : _searchKey;
+        string answer = "";
+        _searchKey = "";
+        string context = _isSaveContext ? string.Join("\n", _histories.Select(x => $"{x.Question}\n{x.Answer}")) : "";
+        _histories.Add(new QuestionAndAnswer(question, answer));
+        StateHasChanged();
+        try
+        {
+            string prompt = $"{context}{question}";
+            var postObj = new { prompt };
+            var response = await HttpClientFactory.CreateClient("WebAPI").PostAsJsonAsync($"chatgpt/do-chat", postObj);
+            var result = await response.Content.ReadFromJsonAsync<ApiResult<string>>();
+
+            if (result == null)
+            {
+                answer = "服务器未响应。";
+                return;
+            }
+            if (result.Code != 0)
+            {
+                answer = result.Message;
+                return;
+            }
+            answer = result.Data ?? "服务器的数据似乎有点异常。";
+        }
+        catch (Exception ex)
+        {
+            answer = $"崩了，崩了，{ex.Message}，{ex.StackTrace}";
+        }
+        finally
+        {
+            _histories.Last(x => x.Question == question).Answer = answer;
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+}
