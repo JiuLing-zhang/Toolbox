@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Toolbox.Web", "src\Toolbox.Web\Toolbox.Web.csproj", "{09A405A2-5218-40AB-B021-43B2B829586B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Toolbox.Pages", "src\Toolbox.Pages\Toolbox.Pages.csproj", "{B46709C3-D18C-4B42-9DAD-F1C91EC61129}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Toolbox.Pages", "src\Toolbox.Pages\Toolbox.Pages.csproj", "{B46709C3-D18C-4B42-9DAD-F1C91EC61129}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
