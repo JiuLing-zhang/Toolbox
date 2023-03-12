@@ -6,44 +6,37 @@
 @inject IHttpClientFactory HttpClientFactory;
 @inject NavigationManager NavigationManager
 <PageTitle>Chat</PageTitle>
-<div class="container">
-    <div class="body">
-        @{
-            if (_isSaveContext)
+@{
+    if (_isSaveContext)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Square="true" Class="my-2">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
+    }
+    foreach (var history in _histories)
+    {
+        <div class="question-item">
+            <div class="speech-content">@history.Question</div>
+            @if (history.Answer.IsEmpty())
             {
-                <div class="alert-box">
-                    <p>当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</p>
+                <div class="loading">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </div>
             }
-            foreach (var history in _histories)
+            else
             {
-                <div class="question-item">
-                    <div class="speech-content">@history.Question</div>
-                    @if (history.Answer.IsEmpty())
-                    {
-                        <div class="loading">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
-                    }
-                    else
-                    {
-                        <MarkdownComponent Content="@history.Answer" />
-                    }
-                </div>
+                <MarkdownComponent Content="@history.Answer" />
             }
-        }
-    </div>
-    <div class="footer">
-        <input class="search-input" placeholder="想聊点什么呢？" @bind="_searchKey" @onkeyup="KeyUp" />
-        <input class="search-button" type="button" value="提问" @onclick="BeginChat" />
-        <input type="checkbox" class="switch" checked="@_isSaveContext" @onchange="SaveContextChanged">
-        <span>连续对话</span>
-    </div>
-</div>
+        </div>
+    }
+}
+<MudPaper Class="d-flex justify-start flex-grow-1 gap-4" Elevation="0">
+    <MudTextField @bind-Value="_searchKey" Label="想聊点什么呢？" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentColor="Color.Secondary" />
+    <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Primary" OnClick="BeginChat">发送</MudButton>
+    <MudSwitch Label="连续对话" Color="Color.Primary" T="bool" CheckedChanged="ContextChanged" />
+</MudPaper>
 
 @code {
 
@@ -74,9 +67,10 @@
         InvokeAsync(RequestOpenAI);
     }
 
-    private void SaveContextChanged(ChangeEventArgs e)
+    private void ContextChanged(bool isSaveContext)
     {
-        NavigationManager.NavigateTo($"/do-chat?SaveContext={Convert.ToBoolean(e.Value)}", true);
+        _isSaveContext = isSaveContext;
+        //NavigationManager.NavigateTo($"/do-chat?SaveContext={Convert.ToBoolean(e.Value)}", true);
     }
 
     private async void BeginChat()
