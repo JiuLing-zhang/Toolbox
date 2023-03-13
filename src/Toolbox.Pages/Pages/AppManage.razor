@@ -1,0 +1,160 @@
+﻿@page "/app"
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using JiuLing.CommonLibs.ExtensionMethods;
+@using Toolbox.Pages.Models
+
+@inject IHttpClientFactory HttpClientFactory;
+@inject ISnackbar Snackbar
+<PageTitle>App</PageTitle>
+
+<MudContainer>
+    <MudTabs Elevation="4" Outlined="false">
+        <MudTabPanel Text="下载" Icon="@Icons.Material.Filled.Download" />
+        <MudTabPanel Text="发布" Icon="@Icons.Material.Filled.Upload">
+
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <MudGrid>
+                    <MudItem xs="12" sm="7">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudSelect T="string" Label="程序" AnchorOrigin="Origin.BottomCenter">
+                                    <MudSelectItem Value="@("Cappuccino")" />
+                                    <MudSelectItem Value="@("Cafe Latte")" />
+                                    <MudSelectItem Value="@("Espresso")" />
+                                </MudSelect>
+                                <MudRadioGroup @bind-SelectedOption="@SelectedOption">
+                                    <MudRadio Option="@("Radio 1")">
+                                        Windows
+                                    </MudRadio>
+                                    <MudRadio Option="@("Radio 2")">
+                                        Android
+                                    </MudRadio>
+                                    <MudRadio Option="@("Radio 3")">
+                                        IOS
+                                    </MudRadio>
+                                </MudRadioGroup>
+                                <MudTextField Label="版本" HelperText="例：1.5.3.2"
+                                              @bind-Value="model.Username" For="@(() => model.Username)" />
+                                <MudRadioGroup @bind-SelectedOption="@IsNoOption">
+                                    <MudRadio Option="@("Radio 1")">
+                                        是
+                                    </MudRadio>
+                                    <MudRadio Option="@("Radio 2")">
+                                        否
+                                    </MudRadio>
+                                </MudRadioGroup>
+                                <MudTextField Label="更新日志"
+                                              @bind-Value="model.SampleText" For="@(() => model.SampleText)"
+                                              Variant="Variant.Outlined"
+                                              Lines="5" />
+
+                                <MudFileUpload T="IBrowserFile">
+                                    <ButtonTemplate Context="xx">
+                                        <MudButton HtmlTag="label"
+                                                   Variant="Variant.Filled"
+                                                   Color="Color.Primary"
+                                                   for="@context">
+                                            Single File
+                                        </MudButton>
+                                    </ButtonTemplate>
+                                    <SelectedTemplate>
+                                        @if (context != null)
+                                        {
+                                            <MudText>@context.Name</MudText>
+                                        }
+                                        else
+                                        {
+                                            <MudText>No File</MudText>
+                                        }
+                                    </SelectedTemplate>
+                                </MudFileUpload>
+
+                                <MudTextField Label="密码" Class="mt-3"
+                                              @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+
+        </MudTabPanel>
+    </MudTabs>
+</MudContainer>
+@code {
+
+    public string SelectedOption { get; set; }
+    public string IsNoOption { get; set; }
+    RegisterAccountForm model = new RegisterAccountForm();
+    bool success;
+
+    public class RegisterAccountForm
+    {
+        [Required]
+        [StringLength(8, ErrorMessage = "Name length can't be more than 8.")]
+        public string Username { get; set; }
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
+        [Required]
+        [StringLength(30, ErrorMessage = "Password must be at least 8 characters long.", MinimumLength = 8)]
+        public string Password { get; set; }
+
+        [Required]
+        [Compare(nameof(Password))]
+        public string Password2 { get; set; }
+
+        public string SampleText { get; set; }
+        public List<string> FileNames = new List<string>();
+
+    }
+
+    private void OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+    }
+
+    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full z-10";
+    private string DragClass = DefaultDragClass;
+
+
+    private void OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        ClearDragClass();
+        var files = e.GetMultipleFiles();
+        foreach (var file in files)
+        {
+            model.FileNames.Add(file.Name);
+        }
+    }
+
+    private async Task Clear()
+    {
+        model.FileNames.Clear();
+        ClearDragClass();
+        await Task.Delay(100);
+    }
+    private void Upload()
+    {
+        //Upload the files here
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        Snackbar.Add("TODO: Upload your files!", Severity.Normal);
+    }
+
+    private void SetDragClass()
+    {
+        DragClass = $"{DefaultDragClass} mud-border-primary";
+    }
+
+    private void ClearDragClass()
+    {
+        DragClass = DefaultDragClass;
+    }
+}
