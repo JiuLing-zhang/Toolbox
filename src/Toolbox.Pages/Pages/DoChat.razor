@@ -4,57 +4,71 @@
 @using Toolbox.Pages.Models
 
 @inject IHttpClientFactory HttpClientFactory;
-@inject NavigationManager NavigationManager
 <PageTitle>Chat</PageTitle>
-@{
-    if (_isSaveContext)
-    {
-        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Square="true" Class="my-2">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
-    }
-    foreach (var history in _histories)
-    {
-        <div class="question-item">
-            <div class="speech-content">@history.Question</div>
-            @if (history.Answer.IsEmpty())
-            {
-                <div class="loading">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
+<MudContainer>
+    <div class="chat-message">
+        @if (_isShowWarning)
+        {
+            <MudAlert Severity="Severity.Warning"
+                  ContentAlignment="HorizontalAlignment.Left">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
+        }
+        @foreach (var history in _histories)
+        {
+            <MudPaper Class="pa-2 mt-2" Square="true" Outlined="true">
+                <div class="question">
+                    <MudIcon Icon="@Icons.Material.Filled.Chat"
+                         Color="Color.Primary"
+                         Size="Size.Small" />
+                    <MudText Class="ml-2" Typo="Typo.subtitle1">@history.Question</MudText>
                 </div>
-            }
-            else
-            {
-                <MarkdownComponent Content="@history.Answer" />
-            }
-        </div>
-    }
-}
-<MudPaper Class="d-flex justify-start flex-grow-1 gap-4" Elevation="0">
-    <MudTextField @bind-Value="_searchKey" Label="想聊点什么呢？" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentColor="Color.Secondary" />
-    <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Primary" OnClick="BeginChat">发送</MudButton>
-    <MudSwitch Label="连续对话" Color="Color.Primary" T="bool" CheckedChanged="ContextChanged" />
-</MudPaper>
 
+                @if (history.Answer.IsEmpty())
+                {
+                    <MudProgressLinear Color="Color.Secondary"
+                               Striped="true"
+                               Size="Size.Large"
+                               Value="100"
+                               Class="my-7" />
+                }
+                else
+                {
+                    <div class="answer">
+                        <MudIcon Icon="@Icons.Material.Filled.SmartToy"
+                         Color="Color.Secondary"
+                         Size="Size.Small" />
+                        <MudText Class="ml-2" Typo="Typo.body1">@history.Answer</MudText>
+                    </div>
+                }
+            </MudPaper>
+        }
+    </div>
+    <div class="chat-tools">
+        <MudTextField Label="想聊点什么呢？"
+                      @bind-Value="_searchKey"
+                      Variant="Variant.Outlined"
+                      Adornment="Adornment.End"
+                      AdornmentColor="Color.Secondary"
+                      AdornmentIcon="@Icons.Material.Filled.Send"
+                      OnAdornmentClick="BeginChat"
+                      OnKeyUp="KeyUp" />
+        <MudSwitch Class="ml-5"
+                   Label="连续对话"
+                   Color="Color.Primary"
+                   T="bool"
+                   CheckedChanged="ContextChanged" />
+    </div>
+</MudContainer>
 @code {
 
     private bool _isLoading;
     private string _searchKey = "";
-    private bool _isSaveContext = true;
+    private bool _isSaveContext = false;
+    private bool _isShowWarning => _isSaveContext;
     private List<QuestionAndAnswer> _histories = null!;
 
     protected override Task OnInitializedAsync()
     {
         _histories = new List<QuestionAndAnswer>();
-
-        var uri = new Uri(NavigationManager.Uri);
-        var isSaveContext = System.Web.HttpUtility.ParseQueryString(uri.Query).Get("SaveContext");
-        if (!bool.TryParse(isSaveContext, out _isSaveContext))
-        {
-            _isSaveContext = false;
-        }
         return base.OnInitializedAsync();
     }
 
@@ -70,7 +84,6 @@
     private void ContextChanged(bool isSaveContext)
     {
         _isSaveContext = isSaveContext;
-        //NavigationManager.NavigateTo($"/do-chat?SaveContext={Convert.ToBoolean(e.Value)}", true);
     }
 
     private async void BeginChat()
