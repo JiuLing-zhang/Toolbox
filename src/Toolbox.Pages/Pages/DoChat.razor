@@ -5,59 +5,57 @@
 
 @inject IHttpClientFactory HttpClientFactory;
 <PageTitle>Chat</PageTitle>
-<MudContainer>
-    <div class="chat-message">
-        @if (_isShowWarning)
-        {
-            <MudAlert Severity="Severity.Warning"
-                  ContentAlignment="HorizontalAlignment.Left">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
-        }
-        @foreach (var history in _histories)
-        {
-            <MudPaper Class="pa-2 mt-2" Square="true" Outlined="true">
-                <div class="question">
-                    <MudIcon Icon="@Icons.Material.Filled.Chat"
-                         Color="Color.Primary"
-                         Size="Size.Small" />
-                    <MudText Class="ml-2" Typo="Typo.subtitle1">@history.Question</MudText>
-                </div>
+<div class="chat-message">
+    @if (_isShowWarning)
+    {
+        <MudAlert Severity="Severity.Warning"
+              ContentAlignment="HorizontalAlignment.Left">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
+    }
+    @foreach (var history in _histories)
+    {
+        <MudPaper Class="pa-2 mt-2" Square="true" Outlined="true">
+            <div class="question">
+                <MudIcon Icon="@Icons.Material.Filled.Chat"
+                     Color="Color.Primary"
+                     Size="Size.Small" />
+                <MudText Class="ml-2" Typo="Typo.subtitle1">@history.Question</MudText>
+            </div>
 
-                @if (history.Answer.IsEmpty())
-                {
-                    <MudProgressLinear Color="Color.Secondary"
-                               Striped="true"
-                               Size="Size.Large"
-                               Value="100"
-                               Class="my-7" />
-                }
-                else
-                {
-                    <div class="answer">
-                        <MudIcon Icon="@Icons.Material.Filled.SmartToy"
-                         Color="Color.Secondary"
-                         Size="Size.Small" />
-                        <MudText Class="ml-2" Typo="Typo.body1">@history.Answer</MudText>
-                    </div>
-                }
-            </MudPaper>
-        }
-    </div>
-    <div class="chat-tools">
-        <MudTextField Label="想聊点什么呢？"
-                      @bind-Value="_searchKey"
-                      Variant="Variant.Outlined"
-                      Adornment="Adornment.End"
-                      AdornmentColor="Color.Secondary"
-                      AdornmentIcon="@Icons.Material.Filled.Send"
-                      OnAdornmentClick="BeginChat"
-                      OnKeyUp="KeyUp" />
-        <MudSwitch Class="ml-5"
-                   Label="连续对话"
-                   Color="Color.Primary"
-                   T="bool"
-                   CheckedChanged="ContextChanged" />
-    </div>
-</MudContainer>
+            @if (history.Answer.IsEmpty())
+            {
+                <MudProgressLinear Color="Color.Secondary"
+                           Striped="true"
+                           Size="Size.Large"
+                           Value="100"
+                           Class="my-7" />
+            }
+            else
+            {
+                <div class="answer">
+                    <MudIcon Icon="@Icons.Material.Filled.SmartToy"
+                     Color="Color.Secondary"
+                     Size="Size.Small" />
+                    <MudText Class="ml-2" Typo="Typo.body1">@history.Answer</MudText>
+                </div>
+            }
+        </MudPaper>
+    }
+</div>
+<div class="chat-tools">
+    <MudTextField Label="想聊点什么呢？"
+                  @bind-Value="_searchKey"
+                  Variant="Variant.Outlined"
+                  Adornment="Adornment.End"
+                  AdornmentColor="Color.Secondary"
+                  AdornmentIcon="@Icons.Material.Filled.Send"
+                  OnAdornmentClick="BeginChat"
+                  OnKeyUp="KeyUp" />
+    <MudSwitch Class="ml-5"
+               Label="连续对话"
+               Color="Color.Primary"
+               T="bool"
+               CheckedChanged="ContextChanged" />
+</div>
 @code {
 
     private bool _isLoading;
