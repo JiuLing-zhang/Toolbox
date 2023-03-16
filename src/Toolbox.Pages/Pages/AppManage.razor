@@ -7,84 +7,62 @@
 @inject IHttpClientFactory HttpClientFactory;
 @inject ISnackbar Snackbar
 <PageTitle>App</PageTitle>
+<MudTabs Elevation="4" Outlined="false">
+    <MudTabPanel Text="下载" Icon="@Icons.Material.Filled.Download" />
+    <MudTabPanel Text="发布" Icon="@Icons.Material.Filled.Upload">
 
-<MudContainer>
-    <MudTabs Elevation="4" Outlined="false">
-        <MudTabPanel Text="下载" Icon="@Icons.Material.Filled.Download" />
-        <MudTabPanel Text="发布" Icon="@Icons.Material.Filled.Upload">
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudGrid>
+                <MudItem xs="12" sm="7">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudSelect T="string" Label="程序" AnchorOrigin="Origin.BottomCenter">
+                                <MudSelectItem Value="@("Cappuccino")" />
+                                <MudSelectItem Value="@("Cafe Latte")" />
+                                <MudSelectItem Value="@("Espresso")" />
+                            </MudSelect>
+                            <MudRadioGroup @bind-SelectedOption="@SelectedOption">
+                                <MudRadio Option="@("Radio 1")">
+                                    Windows
+                                </MudRadio>
+                                <MudRadio Option="@("Radio 2")">
+                                    Android
+                                </MudRadio>
+                                <MudRadio Option="@("Radio 3")">
+                                    IOS
+                                </MudRadio>
+                            </MudRadioGroup>
+                            <MudTextField Label="版本" HelperText="例：1.5.3.2"
+                                          @bind-Value="model.Username" For="@(() => model.Username)" />
+                            <MudRadioGroup @bind-SelectedOption="@IsNoOption">
+                                <MudRadio Option="@("Radio 1")">
+                                    是
+                                </MudRadio>
+                                <MudRadio Option="@("Radio 2")">
+                                    否
+                                </MudRadio>
+                            </MudRadioGroup>
+                            <MudTextField Label="更新日志"
+                                          @bind-Value="model.SampleText" For="@(() => model.SampleText)"
+                                          Variant="Variant.Outlined"
+                                          Lines="5" />
 
-            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
-                <DataAnnotationsValidator />
-                <MudGrid>
-                    <MudItem xs="12" sm="7">
-                        <MudCard>
-                            <MudCardContent>
-                                <MudSelect T="string" Label="程序" AnchorOrigin="Origin.BottomCenter">
-                                    <MudSelectItem Value="@("Cappuccino")" />
-                                    <MudSelectItem Value="@("Cafe Latte")" />
-                                    <MudSelectItem Value="@("Espresso")" />
-                                </MudSelect>
-                                <MudRadioGroup @bind-SelectedOption="@SelectedOption">
-                                    <MudRadio Option="@("Radio 1")">
-                                        Windows
-                                    </MudRadio>
-                                    <MudRadio Option="@("Radio 2")">
-                                        Android
-                                    </MudRadio>
-                                    <MudRadio Option="@("Radio 3")">
-                                        IOS
-                                    </MudRadio>
-                                </MudRadioGroup>
-                                <MudTextField Label="版本" HelperText="例：1.5.3.2"
-                                              @bind-Value="model.Username" For="@(() => model.Username)" />
-                                <MudRadioGroup @bind-SelectedOption="@IsNoOption">
-                                    <MudRadio Option="@("Radio 1")">
-                                        是
-                                    </MudRadio>
-                                    <MudRadio Option="@("Radio 2")">
-                                        否
-                                    </MudRadio>
-                                </MudRadioGroup>
-                                <MudTextField Label="更新日志"
-                                              @bind-Value="model.SampleText" For="@(() => model.SampleText)"
-                                              Variant="Variant.Outlined"
-                                              Lines="5" />
 
-                                <MudFileUpload T="IBrowserFile">
-                                    <ButtonTemplate Context="xx">
-                                        <MudButton HtmlTag="label"
-                                                   Variant="Variant.Filled"
-                                                   Color="Color.Primary"
-                                                   for="@context">
-                                            Single File
-                                        </MudButton>
-                                    </ButtonTemplate>
-                                    <SelectedTemplate>
-                                        @if (context != null)
-                                        {
-                                            <MudText>@context.Name</MudText>
-                                        }
-                                        else
-                                        {
-                                            <MudText>No File</MudText>
-                                        }
-                                    </SelectedTemplate>
-                                </MudFileUpload>
 
-                                <MudTextField Label="密码" Class="mt-3"
-                                              @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
-                            </MudCardContent>
-                            <MudCardActions>
-                                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
-                            </MudCardActions>
-                        </MudCard>
-                    </MudItem>
-                </MudGrid>
-            </EditForm>
+                            <MudTextField Label="密码" Class="mt-3"
+                                          @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
 
-        </MudTabPanel>
-    </MudTabs>
-</MudContainer>
+    </MudTabPanel>
+</MudTabs>
 @code {
 
     public string SelectedOption { get; set; }
