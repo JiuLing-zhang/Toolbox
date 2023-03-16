@@ -1,0 +1,141 @@
+﻿@page "/hash"
+
+@using JiuLing.CommonLibs.ExtensionMethods;
+@using Toolbox.Pages.Models
+@inject ISnackbar Snackbar
+<MudButtonGroup Class="mt-2"
+                OverrideStyles=false>
+    @foreach (var hashType in _hashTypeList)
+    {
+        Color color;
+        if (_currentHashType == hashType)
+        {
+            color = Color.Info;
+        }
+        else
+        {
+            color = Color.Dark;
+        }
+        <MudButton Color="@(color)"
+               Variant="Variant.Outlined"
+               OnClick="@(()=>HashTypeSwitch(hashType))">@hashType</MudButton>
+    }
+</MudButtonGroup>
+
+<MudGrid Spacing="3" Class="mt-4">
+    <MudItem xs="6">
+        <MudText Typo="Typo.subtitle2">字符串计算</MudText>
+        <MudTextField T="string"
+                      Label="请输入要计算的字符串"
+                      Variant="Variant.Outlined"
+                      Text="@_inputText"
+                      TextChanged="@(()=>OnInputTextChanged())"
+                      Lines="6" />
+    </MudItem>
+    <MudItem xs="6">
+        <MudText Typo="Typo.subtitle2">文件计算</MudText>
+        <MudStack Style="width: 100%">
+            <MudFileUpload T="IBrowserFile" OnFilesChanged="OnInputFileChanged" Hidden="false" Class="flex-1" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
+                           @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
+                <ButtonTemplate>
+                    @if (_fileName.IsEmpty())
+                    {
+                        <MudPaper Height="150px" Outlined="true" Class="@DragClass">
+                            <MudText Typo="Typo.h6">
+                                点击这里选择文件 或 拖拽文件到该区域
+                            </MudText>
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudPaper Height="150px" Outlined="true" Class="relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-30">
+                            <MudChip Color="Color.Dark"
+                                 Text="@_fileName"
+                                 OnClose="@(()=>RemoveFile())" />
+                        </MudPaper>
+                    }
+                </ButtonTemplate>
+            </MudFileUpload>
+        </MudStack>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudToolBar Class="align-end pl-0 pr-0">
+            <MudText Typo="Typo.subtitle2" Color="Color.Info" Class="mr-1">@_currentHashType</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mr-5">计算结果</MudText>
+            <div style="width: 100px;">
+                <MudSelect Margin="Margin.Dense"
+                           T="string"
+                           @bind-Value="_encoding"
+                           Label="编码"
+                           Variant="Variant.Text">
+                    <MudSelectItem Value="@("UTF-8")" />
+                </MudSelect>
+            </div>
+            <MudSwitch Class="ml-5"
+                       @bind-Checked="@_isUpper"
+                       Label="大写"
+                       Color="Color.Success" />
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                           Color="Color.Success"
+                           Size="Size.Small" />
+        </MudToolBar>
+
+        <MudTextField T="string"
+                      Variant="Variant.Outlined"
+                      Value="@_encoding"
+                      Lines="6" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string _currentHashType = "SHA1";
+    private readonly List<string> _hashTypeList = new List<string>() { "SHA1", "SHA256" };
+    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-10";
+    private string DragClass = DefaultDragClass;
+
+    /// <summary>
+    /// 计算方式是否为字符串计算
+    /// </summary>
+    private bool _isCalculateForText = true;
+    private string _inputText = "";
+    private string _fileName = "";
+    private string _encoding = "";
+    private bool _isUpper = true;
+    private void HashTypeSwitch(string hashType)
+    {
+        _currentHashType = hashType;
+    }
+
+    private void OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        ClearDragClass();
+        _fileName = e.GetMultipleFiles()[0].Name;
+        _isCalculateForText = false;
+        GetHash();
+    }
+    private void RemoveFile()
+    {
+        _fileName = "";
+    }
+    private void SetDragClass()
+    {
+        DragClass = $"{DefaultDragClass} mud-border-primary";
+    }
+
+    private void ClearDragClass()
+    {
+        DragClass = DefaultDragClass;
+    }
+    private void OnInputTextChanged()
+    {
+        _isCalculateForText = true;
+        GetHash();
+    }
+
+    private void GetHash()
+    {
+
+    }
+}
