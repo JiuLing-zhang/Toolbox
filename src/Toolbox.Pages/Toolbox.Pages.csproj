@@ -14,8 +14,8 @@
 	<ItemGroup>
 		<PackageReference Include="JiuLing.CommonLibs" Version="1.5.5" />
 		<PackageReference Include="Markdig" Version="0.31.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="7.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="7.0.4" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
-		<PackageReference Include="MudBlazor" Version="6.1.9" />
+		<PackageReference Include="MudBlazor" Version="6.2.0" />
 	</ItemGroup>
 </Project>
