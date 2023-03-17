@@ -1,0 +1,42 @@
+﻿.main-img {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px
+}
+
+    .main-img img {
+        max-width: 40vh;
+        height: auto;
+        margin-top: 20vh
+    }
+
+.loading-line {
+    margin-left: auto;
+    margin-right: auto;
+    width: 50vh;
+    height: 3px;
+    background-color: #ccc;
+    position: relative;
+    overflow: hidden;
+}
+
+    .loading-line::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 50vh;
+        height: 3px;
+        background-color: #0099FF;
+        animation: loading-line 2s linear infinite;
+    }
+
+@keyframes loading-line {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
