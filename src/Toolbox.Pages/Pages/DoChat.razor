@@ -44,6 +44,7 @@
 <div class="chat-tools">
     <MudTextField Label="想聊点什么呢？"
                   @bind-Value="_searchKey"
+                  Disabled="@_isLoading"
                   Variant="Variant.Outlined"
                   Adornment="Adornment.End"
                   AdornmentColor="Color.Secondary"
@@ -51,6 +52,7 @@
                   OnAdornmentClick="BeginChat"
                   OnKeyUp="KeyUp" />
     <MudSwitch Class="ml-5"
+               Disabled="@_isLoading"
                Label="连续对话"
                Color="Color.Primary"
                T="bool"

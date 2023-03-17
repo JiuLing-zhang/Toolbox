@@ -1,12 +1,13 @@
+using JiuLing.CommonLibs.ExtensionMethods;
 using Microsoft.Extensions.Options;
 using OpenAI.GPT3;
 using OpenAI.GPT3.Managers;
 using OpenAI.GPT3.ObjectModels.RequestModels;
+using System.Net;
 using Toolbox.Api;
 using Toolbox.Api.ErrorHandler;
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -16,11 +17,28 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 
-builder.Services.AddScoped(serviceProvider => new OpenAIService(new OpenAiOptions()
+builder.Services.AddHttpClient("OpenAI", (sp, client) =>
 {
-    ApiKey = (serviceProvider.GetService<IOptions<AppSettings>>())?.Value.ChatGPTApiKey ??
-             throw new ArgumentNullException()
-}));
+    var address = sp.GetService<IOptions<AppSettings>>()?.Value.OpenAI.WebProxyAddress;
+    if (address.IsNotEmpty())
+    {
+        var handler = new HttpClientHandler()
+        {
+            Proxy = new WebProxy(address)
+        };
+        client = new HttpClient(handler);
+    }
+});
+
+builder.Services.AddScoped<OpenAIService>(sp =>
+{
+    return new OpenAIService(new OpenAiOptions()
+    {
+        ApiKey = sp.GetService<IOptions<AppSettings>>()?.Value.OpenAI.ChatGPTApiKey ??
+                  throw new ArgumentNullException()
+
+    }, sp.GetService<IHttpClientFactory>()?.CreateClient("OpenAI"));
+});
 builder.Services.AddScoped(serviceProvider => new CompletionCreateRequest()
 {
     Temperature = 0,
@@ -31,9 +49,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("MyPolicy", x =>
     {
-        x.WithOrigins("https://localhost:7161")
+        var origins = builder.Configuration["CorsOrigins"];
+        if (origins.IsNotEmpty())
+        {
+            x.WithOrigins(origins.Split(";"))
             .AllowAnyHeader()
             .AllowAnyMethod();
+        }
     });
 });
 

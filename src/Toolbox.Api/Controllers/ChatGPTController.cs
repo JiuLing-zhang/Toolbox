@@ -23,7 +23,7 @@ public class ChatGPTController : ControllerBase
     [HttpPost("do-chat")]
     public async Task<IActionResult> DoChat(ChatGPTRequest request)
     {
-        if (request.Prompt.Length > _appSettings.ContextMaxLength)
+        if (request.Prompt.Length > _appSettings.OpenAI.ContextMaxLength)
         {
             return Ok(new ApiResponse(1, "语境有点长了，请刷新页面后重新玩耍~~~~"));
         }
