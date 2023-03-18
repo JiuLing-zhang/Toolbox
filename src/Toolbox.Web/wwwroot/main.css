@@ -1,4 +1,24 @@
-﻿.main-img {
+﻿body {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#app {
+    flex-grow: 1;
+    flex-shrink: 0;
+    flex-basis: auto;
+}
+
+.footer {
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: auto;
+    display: flex;
+    justify-content: center;
+}
+
+.main-img {
     display: flex;
     justify-content: center;
     margin-bottom: 30px
