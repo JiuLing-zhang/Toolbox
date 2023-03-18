@@ -8,11 +8,15 @@
     <MudAppBar Elevation="1" Dense="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/MudBlazor/MudBlazor" Target="_blank" />
+        <MudIcon Icon="@Icons.Material.Filled.TipsAndUpdates" />
+        <MudText Typo="Typo.subtitle1">人生苦短，用</MudText>
+        <MudIcon Icon="@Icons.Material.Filled.HeartBroken" Size="Size.Small" />
+        <MudText Typo="Typo.subtitle1">写 Bug</MudText>
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/JiuLing-zhang" Target="_blank" />
     </MudAppBar>
     <MudDrawer @bind-Open="@open" Elevation="1">
         <MudDrawerHeader>
-            <MudText Typo="Typo.h6">My App</MudText>
+            <MudImage Src="main-ascii.png" Width="80"></MudImage>
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
