@@ -60,3 +60,10 @@
         transform: translateX(100%);
     }
 }
+
+.tips {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    color: #FFCC99;
+}

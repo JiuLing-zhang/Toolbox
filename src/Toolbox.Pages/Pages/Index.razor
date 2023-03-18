@@ -1,7 +1,45 @@
 ﻿@page "/"
 
+@inject NavigationManager _navigation
+
 <PageTitle>码术</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
-<MudText Class="mb-8">Welcome to your new app, powered by MudBlazor!</MudText>
-<MudAlert Severity="Severity.Normal">You can find documentation and examples on our website here: <MudLink Href="https://mudblazor.com" Typo="Typo.body2" Color="Color.Inherit"><b>www.mudblazor.com</b></MudLink></MudAlert>
+<MudGrid Class="mt-10" Spacing="6">
+    <MudItem xs="6">
+        <div class="tile" @onclick="@(()=>DoNavigate("/app"))">
+            <div class="item">
+                找一些开发组件、常用应用？
+            </div>
+        </div>
+    </MudItem>
+    <MudItem xs="6">
+        <div class="tile" @onclick="@(()=>DoNavigate("/chat"))">
+            <div class="item">
+                体验下 ChatGPT 对话？
+            </div>
+        </div>
+    </MudItem>
+    <MudItem xs="6">
+        <div class="tile" @onclick="@(()=>DoNavigate("/hash"))">
+            <div class="item">
+                需要计算哈希值？
+            </div>
+        </div>
+    </MudItem>
+    <MudItem xs="6">
+        <div class="tile">
+            <div class="item">
+                更多内容？开发中~~
+            </div>
+        </div>
+    </MudItem>
+</MudGrid>
+
+@code{
+
+    private void DoNavigate(string uri)
+    {
+        _navigation.NavigateTo(uri);
+    }
+
+}
