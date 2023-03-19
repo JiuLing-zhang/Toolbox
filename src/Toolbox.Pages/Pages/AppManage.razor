@@ -1,139 +1,154 @@
 ﻿@page "/app"
-@using System.Text.RegularExpressions
-@using System.ComponentModel.DataAnnotations
-@using JiuLing.CommonLibs.ExtensionMethods;
+@using System.Text.Json
 @using Toolbox.Pages.Models
 
 @inject IHttpClientFactory HttpClientFactory;
-@inject ISnackbar Snackbar
 
 <PageTitle>码术 - 开源工具</PageTitle>
-<MudTabs Elevation="4" Outlined="false">
-    <MudTabPanel Text="下载" Icon="@Icons.Material.Filled.Download" />
-    <MudTabPanel Text="发布" Icon="@Icons.Material.Filled.Upload">
 
-        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
-            <DataAnnotationsValidator />
-            <MudGrid>
-                <MudItem xs="12" sm="7">
-                    <MudCard>
-                        <MudCardContent>
-                            <MudSelect T="string" Label="程序" AnchorOrigin="Origin.BottomCenter">
-                                <MudSelectItem Value="@("Cappuccino")" />
-                                <MudSelectItem Value="@("Cafe Latte")" />
-                                <MudSelectItem Value="@("Espresso")" />
-                            </MudSelect>
-                            <MudRadioGroup @bind-SelectedOption="@SelectedOption">
-                                <MudRadio Option="@("Radio 1")">
-                                    Windows
-                                </MudRadio>
-                                <MudRadio Option="@("Radio 2")">
-                                    Android
-                                </MudRadio>
-                                <MudRadio Option="@("Radio 3")">
-                                    IOS
-                                </MudRadio>
-                            </MudRadioGroup>
-                            <MudTextField Label="版本" HelperText="例：1.5.3.2"
-                                          @bind-Value="model.Username" For="@(() => model.Username)" />
-                            <MudRadioGroup @bind-SelectedOption="@IsNoOption">
-                                <MudRadio Option="@("Radio 1")">
-                                    是
-                                </MudRadio>
-                                <MudRadio Option="@("Radio 2")">
-                                    否
-                                </MudRadio>
-                            </MudRadioGroup>
-                            <MudTextField Label="更新日志"
-                                          @bind-Value="model.SampleText" For="@(() => model.SampleText)"
-                                          Variant="Variant.Outlined"
-                                          Lines="5" />
+<MudTabs Elevation="2"
+         Rounded="true"
+         ApplyEffectsToContainer="true"
+         PanelClass="pa-6"
+         ActivePanelIndexChanged="OnActivePanelIndexChanged">
+    <MudTabPanel Text="开源软件">
+        @if (_apps == null)
+        {
+            if (_isAppError)
+            {
+                <MudAlert Severity="Severity.Error">软件列表加载失败</MudAlert>
+            }
+            else
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    <MudPaper Class="mt-5 mb-5 pa-5" Elevation="3">
+                        <MudSkeleton Animation="Animation.Wave" Width="30%" />
+                        <MudSkeleton Animation="Animation.Wave" Width="60%" />
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="60%" Height="110px" />
+                    </MudPaper>
+                }
+            }
+        }
+        else
+        {
+            foreach (var app in _apps)
+            {
+                <MudPaper Class="mt-5 mb-5 pa-5" Elevation="3">
+                    <div style="display: flex; align-items: center;">
+                        <MudImage Src="_content/Toolbox.Pages/images/main-ascii.png" Width="20" Height="20" />
+                        <MudText Class="ml-3" Typo="Typo.subtitle1">@app.AppName</MudText>
+                        <MudText Class="ml-8" Typo="Typo.subtitle2">下载次数: </MudText>
+                        <MudText Class="ml-1" Typo="Typo.subtitle2">@app.DownloadCount</MudText>
+                        <MudIconButton Class="ml-8" Icon="@Icons.Custom.Brands.GitHub" Style="color:#0099FF" Href="@app.GitHub" Target="_blank" />
+                    </div>
 
+                    <MudText Typo="Typo.body2">@app.Description</MudText>
+                    @if (app.Versions == null)
+                    {
+                        <MudAlert Class="mt-2" Severity="Severity.Info" Dense="true">没有可用的版本信息</MudAlert>
+                    }
+                    else
+                    {
+                        foreach (var version in app.Versions)
+                        {
+                            var icon = "";
+                            if (version.PlatformType == Enums.PlatformEnum.Windows)
+                            {
+                                icon = "windows";
+                            }
+                            else if (version.PlatformType == Enums.PlatformEnum.Android)
+                            {
+                                icon = "android";
+                            }
+                            else if (version.PlatformType == Enums.PlatformEnum.IOS)
+                            {
+                                icon = "apple";
+                            }
 
+                            <MudGrid Class="mt-2">
+                                <MudItem Class="d-flex align-center" xs="12">
+                                    <MudText Typo="Typo.subtitle2">平台:</MudText>
+                                    <MudImage Class="ml-3" Src="@($"_content/Toolbox.Pages/images/{icon}.png")" Width="15" Height="15"></MudImage>
+                                    <MudText Class="ml-1" Typo="Typo.subtitle2">@version.PlatformType</MudText>
+                                    <MudLink Class="ml-2" Href="@($"api/download/{version.DownloadId}")" Underline="Underline.None">下载</MudLink>
+                                </MudItem>
 
-                            <MudTextField Label="密码" Class="mt-3"
-                                          @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
-                        </MudCardContent>
-                        <MudCardActions>
-                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
-            </MudGrid>
-        </EditForm>
+                                <MudItem Class="d-flex align-center" xs="5">
+                                    <MudText Typo="Typo.subtitle2">版本:</MudText>
+                                    <MudText Class="ml-3" Typo="Typo.subtitle2">@version.VersionName</MudText>
+                                </MudItem>
+
+                                <MudItem Class="d-flex align-center" xs="5">
+                                    <MudText Typo="Typo.subtitle2">发布时间:</MudText>
+                                    <MudText Class="ml-3" Typo="Typo.subtitle2">@version.PublishTime</MudText>
+                                </MudItem>
+                                <MudItem Class="d-flex align-center" xs="5">
+                                    <MudText Typo="Typo.subtitle2">大小:</MudText>
+                                    <MudText Class="ml-3" Typo="Typo.subtitle2">@version.FileLengthMb</MudText>
+                                </MudItem>
+
+                                <MudItem Class="d-flex align-center" xs="5">
+                                    <MudText Typo="Typo.subtitle2">@version.SignType.ToString():</MudText>
+                                    <MudText Class="ml-8" Typo="Typo.subtitle2">@version.SignValue</MudText>
+                                </MudItem>
+                            </MudGrid>
+                        }
+                    }
+                </MudPaper>
+            }
+        }
 
     </MudTabPanel>
+    <MudTabPanel Text="开源组件">
+        <MudText>Content Two</MudText>
+    </MudTabPanel>
 </MudTabs>
+
 @code {
-
-    public string SelectedOption { get; set; }
-    public string IsNoOption { get; set; }
-    RegisterAccountForm model = new RegisterAccountForm();
-    bool success;
-
-    public class RegisterAccountForm
+    private bool _isAppError = false;
+    private List<AppInfo>? _apps;
+    protected override async Task OnInitializedAsync()
     {
-        [Required]
-        [StringLength(8, ErrorMessage = "Name length can't be more than 8.")]
-        public string Username { get; set; }
-
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
-
-        [Required]
-        [StringLength(30, ErrorMessage = "Password must be at least 8 characters long.", MinimumLength = 8)]
-        public string Password { get; set; }
-
-        [Required]
-        [Compare(nameof(Password))]
-        public string Password2 { get; set; }
-
-        public string SampleText { get; set; }
-        public List<string> FileNames = new List<string>();
-
+        await GetApps();
     }
 
-    private void OnValidSubmit(EditContext context)
+    private async void OnActivePanelIndexChanged(int index)
     {
-        success = true;
-        StateHasChanged();
-    }
-
-    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full z-10";
-    private string DragClass = DefaultDragClass;
-
-
-    private void OnInputFileChanged(InputFileChangeEventArgs e)
-    {
-        ClearDragClass();
-        var files = e.GetMultipleFiles();
-        foreach (var file in files)
+        if (index == 0)
         {
-            model.FileNames.Add(file.Name);
+            await GetApps();
+        }
+        else if (index == 1)
+        {
+
         }
     }
 
-    private async Task Clear()
+    private async Task GetApps()
     {
-        model.FileNames.Clear();
-        ClearDragClass();
-        await Task.Delay(100);
-    }
-    private void Upload()
-    {
-        //Upload the files here
-        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-        Snackbar.Add("TODO: Upload your files!", Severity.Normal);
-    }
+        if (_apps != null && _isAppError == false)
+        {
+            return;
+        }
+        _isAppError = false;
+        StateHasChanged();
+         
+        var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
 
-    private void SetDragClass()
-    {
-        DragClass = $"{DefaultDragClass} mud-border-primary";
-    }
-
-    private void ClearDragClass()
-    {
-        DragClass = DefaultDragClass;
+        var response = await HttpClientFactory.CreateClient("WebAPI").GetStringAsync($"app/list");
+        var result = JsonSerializer.Deserialize<ApiResult<List<AppInfo>>>(response, options);
+        if (result != null && result.Code == 0)
+        {
+            _apps = result.Data;
+        }
+        else
+        {
+            _isAppError = true;
+        }
+        StateHasChanged();
     }
 }
