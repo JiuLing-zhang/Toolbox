@@ -4,8 +4,13 @@ using OpenAI.GPT3;
 using OpenAI.GPT3.Managers;
 using OpenAI.GPT3.ObjectModels.RequestModels;
 using System.Net;
+using Microsoft.EntityFrameworkCore;
 using Toolbox.Api;
+using Toolbox.Api.DbContext;
 using Toolbox.Api.ErrorHandler;
+using Toolbox.Api.Interface;
+using Toolbox.Api.Repositories;
+using Toolbox.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -14,6 +19,17 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
+builder.Services.AddDbContext<AppDbContext>
+    (options => options.UseNpgsql(builder.Configuration.GetConnectionString("appConnection")));
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+builder.Services.AddTransient<IAppPublishService, AppPublishService>();
+builder.Services.AddTransient<IAppShowService, AppShowService>();
+
+builder.Services.AddTransient<IAppInfoRepository, AppInfoRepository>();
+builder.Services.AddTransient<IAppBaseRepository, AppBaseRepository>();
 
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 
