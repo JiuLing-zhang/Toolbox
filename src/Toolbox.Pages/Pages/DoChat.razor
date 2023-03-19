@@ -11,6 +11,12 @@
         <MudAlert Severity="Severity.Warning"
               ContentAlignment="HorizontalAlignment.Left">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
     }
+
+    @if (_histories.Count == 0)
+    {
+        <MudAlert Icon="@Icons.Material.Filled.SportsScore" Severity="Severity.Success">欢迎来到 AI 世界</MudAlert>
+    }
+
     @foreach (var history in _histories)
     {
         <MudPaper Class="pa-2 mt-2" Square="true" Outlined="true">
