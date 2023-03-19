@@ -4,4 +4,5 @@ namespace Toolbox.Api.Interface;
 public interface IAppShowService
 {
     Task<List<AppInfoResponse>> GetAppsAsync();
+    Task<List<ComponentInfoResponse>> GetComponentsAsync();
 }

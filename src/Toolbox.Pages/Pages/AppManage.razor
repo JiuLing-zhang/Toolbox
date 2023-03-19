@@ -36,8 +36,8 @@
             {
                 <MudPaper Class="mt-5 mb-5 pa-5" Elevation="3">
                     <div style="display: flex; align-items: center;">
-                        <MudImage Src="_content/Toolbox.Pages/images/main-ascii.png" Width="20" Height="20" />
-                        <MudText Class="ml-3" Typo="Typo.subtitle1">@app.AppName</MudText>
+                        <MudImage Src="@app.Icon" Width="20" Height="20" />
+                        <MudText Class="ml-3" Typo="Typo.subtitle1" Style="font-weight: bold;">@app.AppName</MudText>
                         <MudText Class="ml-8" Typo="Typo.subtitle2">下载次数: </MudText>
                         <MudText Class="ml-1" Typo="Typo.subtitle2">@app.DownloadCount</MudText>
                         <MudIconButton Class="ml-8" Icon="@Icons.Custom.Brands.GitHub" Style="color:#0099FF" Href="@app.GitHub" Target="_blank" />
@@ -71,7 +71,7 @@
                                     <MudText Typo="Typo.subtitle2">平台:</MudText>
                                     <MudImage Class="ml-3" Src="@($"_content/Toolbox.Pages/images/{icon}.png")" Width="15" Height="15"></MudImage>
                                     <MudText Class="ml-1" Typo="Typo.subtitle2">@version.PlatformType</MudText>
-                                    <MudLink Class="ml-2" Href="@($"api/download/{version.DownloadId}")" Underline="Underline.None">下载</MudLink>
+                                    <MudLink Disabled Class="ml-2" Href="@($"api/download/{version.DownloadId}")" Underline="Underline.None">下载</MudLink>
                                 </MudItem>
 
                                 <MudItem Class="d-flex align-center" xs="5">
@@ -98,16 +98,56 @@
                 </MudPaper>
             }
         }
-
     </MudTabPanel>
     <MudTabPanel Text="开源组件">
-        <MudText>Content Two</MudText>
+
+        @if (_components == null)
+        {
+            if (_isComponentError)
+            {
+                <MudAlert Severity="Severity.Error">组件列表加载失败</MudAlert>
+            }
+            else
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    <MudPaper Class="mt-5 mb-5 pa-5" Elevation="3">
+                        <MudSkeleton Animation="Animation.Wave" Width="30%" />
+                        <MudSkeleton Animation="Animation.Wave" Width="60%" />
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="60%" Height="110px" />
+                    </MudPaper>
+                }
+            }
+        }
+        else
+        {
+            foreach (var component in _components)
+            {
+                <MudPaper Class="mt-5 mb-5 pa-5" Elevation="3">
+                    <div style="display: flex; align-items: center;">
+                        <MudImage Src="@component.Icon" Width="20" Height="20" />
+                        <MudText Class="ml-3" Typo="Typo.subtitle1" Style="font-weight: bold;">@component.Name</MudText>
+                        <MudImage Src="@($"https://img.shields.io/nuget/v/{component.Name}")" Class="ml-4" />
+                        <MudImage Src="@($"https://img.shields.io/nuget/dt/{component.Name}")" Class="ml-2" />
+                    </div>
+                    <MudText Class="mt-5" Typo="Typo.body2">
+                        @component.Description
+                    </MudText>
+                    <div style="display: flex; align-items: center; margin-top: 10px;">
+                        <MudLink Href="@($"https://www.nuget.org/packages/{component.Name}")" Underline="Underline.None" Target="_blank">nuget</MudLink>
+                        <MudLink Class="ml-4" Href="@component.GitHub" Underline="Underline.None" Target="_blank">github</MudLink>
+                    </div>
+                </MudPaper>
+            }
+        }
     </MudTabPanel>
 </MudTabs>
 
 @code {
     private bool _isAppError = false;
     private List<AppInfo>? _apps;
+    private bool _isComponentError = false;
+    private List<ComponentInfo>? _components;
     protected override async Task OnInitializedAsync()
     {
         await GetApps();
@@ -121,7 +161,7 @@
         }
         else if (index == 1)
         {
-
+            await GetComponents();
         }
     }
 
@@ -133,13 +173,13 @@
         }
         _isAppError = false;
         StateHasChanged();
-         
+
         var options = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             };
 
-        var response = await HttpClientFactory.CreateClient("WebAPI").GetStringAsync($"app/list");
+        var response = await HttpClientFactory.CreateClient("WebAPI").GetStringAsync($"app/app-list");
         var result = JsonSerializer.Deserialize<ApiResult<List<AppInfo>>>(response, options);
         if (result != null && result.Code == 0)
         {
@@ -148,6 +188,33 @@
         else
         {
             _isAppError = true;
+        }
+        StateHasChanged();
+    }
+
+    private async Task GetComponents()
+    {
+        if (_components != null && _isComponentError == false)
+        {
+            return;
+        }
+        _isComponentError = false;
+        StateHasChanged();
+
+        var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+        var response = await HttpClientFactory.CreateClient("WebAPI").GetStringAsync($"app/component-list");
+        var result = JsonSerializer.Deserialize<ApiResult<List<ComponentInfo>>>(response, options);
+        if (result != null && result.Code == 0)
+        {
+            _components = result.Data;
+        }
+        else
+        {
+            _isComponentError = true;
         }
         StateHasChanged();
     }

@@ -8,11 +8,13 @@ internal class AppShowService : IAppShowService
 {
     private readonly IAppBaseRepository _appBaseRepository;
     private readonly IAppInfoRepository _appInfoRepository;
+    private readonly IComponentRepository _componentRepository;
 
-    public AppShowService(IAppBaseRepository appBaseRepository, IAppInfoRepository appInfoRepository)
+    public AppShowService(IAppBaseRepository appBaseRepository, IAppInfoRepository appInfoRepository, IComponentRepository componentRepository)
     {
         _appBaseRepository = appBaseRepository;
         _appInfoRepository = appInfoRepository;
+        _componentRepository = componentRepository;
     }
 
     public async Task<List<AppInfoResponse>> GetAppsAsync()
@@ -64,6 +66,18 @@ internal class AppShowService : IAppShowService
         }
 
         return result;
+    }
+
+    public async Task<List<ComponentInfoResponse>> GetComponentsAsync()
+    {
+        var components = await _componentRepository.GetAllAsync();
+        return components.Select(x => new ComponentInfoResponse
+        {
+            Name = x.Name,
+            Icon = x.Icon,
+            Description = x.Description,
+            GitHub = x.GitHub,
+        }).ToList();
     }
 
     private void BuildAppInfo(IEnumerable<AppInfo> apps, PlatformEnum platform, out AppVersionInfoResponse? versions)

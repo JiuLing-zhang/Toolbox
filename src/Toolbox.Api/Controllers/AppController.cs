@@ -16,10 +16,17 @@ public class AppController : ControllerBase
         _hostEnvironment = hostEnvironment;
     }
 
-    [HttpGet("list")]
+    [HttpGet("app-list")]
     public async Task<IActionResult> GetAppsAsync()
     {
         var apps = await _appShowService.GetAppsAsync();
         return Ok(new ApiResponse<List<AppInfoResponse>>(0, "操作成功", apps));
+    }
+
+    [HttpGet("component-list")]
+    public async Task<IActionResult> GetComponentsAsync()
+    {
+        var components = await _appShowService.GetComponentsAsync();
+        return Ok(new ApiResponse<List<ComponentInfoResponse>>(0, "操作成功", components));
     }
 }

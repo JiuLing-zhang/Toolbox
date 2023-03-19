@@ -30,6 +30,7 @@ builder.Services.AddTransient<IAppShowService, AppShowService>();
 
 builder.Services.AddTransient<IAppInfoRepository, AppInfoRepository>();
 builder.Services.AddTransient<IAppBaseRepository, AppBaseRepository>();
+builder.Services.AddTransient<IComponentRepository, ComponentRepository>();
 
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 
