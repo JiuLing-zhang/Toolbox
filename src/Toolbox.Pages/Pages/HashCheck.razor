@@ -2,7 +2,12 @@
 
 @using JiuLing.CommonLibs.ExtensionMethods;
 @using JiuLing.CommonLibs.Security
+@using Microsoft.Extensions.Configuration;
+@using Toolbox.Pages.Shared.Dialogs;
 @inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
+@inject IDialogService Dialog
+
 <PageTitle>码术 - 哈希工具</PageTitle>
 
 <MudButtonGroup Class="mt-2"
@@ -118,9 +123,21 @@
     private async void OnInputFileChanged(InputFileChangeEventArgs e)
     {
         ClearDragClass();
+        long maxFileSize = Convert.ToInt64(Configuration["HashCheckMaxFileSize"]);
+        if (e.GetMultipleFiles()[0].Size >= maxFileSize)
+        {
+            var options = new DialogOptions()
+                {
+                    NoHeader = true
+                };
+            var parameters = new DialogParameters();
+            parameters.Add("ContentText", "文件大小超过系统限制");
+            Dialog.Show<DialogOk>("提示", parameters, options);
+            return;
+        }
         _fileName = e.GetMultipleFiles()[0].Name;
         var ms = new MemoryStream();
-        await e.GetMultipleFiles()[0].OpenReadStream().CopyToAsync(ms);
+        await e.GetMultipleFiles()[0].OpenReadStream(maxFileSize).CopyToAsync(ms);
         _fileBytes = ms.ToArray();
         _isCalculateForText = false;
         GetHashInner();
