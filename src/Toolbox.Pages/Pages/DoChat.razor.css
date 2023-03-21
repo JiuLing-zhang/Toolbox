@@ -19,7 +19,8 @@
 .chat-tools {
     display: flex;
     align-items: center;
-    height: 18vh;
+    height: 8vh;
     Width: 100%;
-    padding-bottom: 40px
+    margin-top: 20px;
+    padding-bottom: 25px
 }

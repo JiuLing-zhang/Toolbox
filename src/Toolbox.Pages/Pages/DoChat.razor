@@ -4,6 +4,8 @@
 @using Toolbox.Pages.Models
 
 @inject IHttpClientFactory HttpClientFactory;
+@inject IDialogService DialogService
+
 <PageTitle>码术 - AI 聊天</PageTitle>
 <div class="chat-message">
     @if (_isShowWarning)
@@ -12,9 +14,30 @@
               ContentAlignment="HorizontalAlignment.Left">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
     }
 
+    <div style="display:flex">
+        <MudChipSet @bind-SelectedChip="_modelSelected" Filter="true" Mandatory=true>
+            <MudChip Text="0"
+                     Disabled="@_isLoading"
+                     Variant="Variant.Outlined"
+                     Color="Color.Info">普通模式</MudChip>
+            <MudChip Text="1"
+                     Disabled="@_isLoading"
+                     Variant="Variant.Outlined"
+                     Color="Color.Info"
+                     Default=true>程序员模式</MudChip>
+        </MudChipSet>
+        <MudChipSet @bind-SelectedChip="_saveContextSelected" Filter="true">
+            <MudChip Text="SaveContext"
+                     Disabled="@_isLoading"
+                     Variant="Variant.Outlined"
+                     Color="Color.Warning"
+                     OnClick="OnSaveContextChanged">连续对话模式</MudChip>
+        </MudChipSet>
+    </div>
+
     @if (_histories.Count == 0)
     {
-        <MudAlert Icon="@Icons.Material.Filled.SportsScore" Severity="Severity.Success">欢迎来到 AI 世界</MudAlert>
+        <MudAlert Class="mt-3" Icon="@Icons.Material.Filled.SportsScore" Severity="Severity.Success">欢迎来到 AI 世界</MudAlert>
     }
 
     @foreach (var history in _histories)
@@ -38,10 +61,12 @@
             else
             {
                 <div class="answer">
-                    <MudIcon Icon="@Icons.Material.Filled.SmartToy"
+                    <MudIcon Class="mr-2"
+                     Icon="@Icons.Material.Filled.SmartToy"
                      Color="Color.Secondary"
                      Size="Size.Small" />
-                    <MudText Class="ml-2" Typo="Typo.body1">@history.Answer</MudText>
+                    <MudMarkdown Value="@history.Answer" />
+                    
                 </div>
             }
         </MudPaper>
@@ -57,12 +82,6 @@
                   AdornmentIcon="@Icons.Material.Filled.Send"
                   OnAdornmentClick="BeginChat"
                   OnKeyUp="KeyUp" />
-    <MudSwitch Class="ml-5"
-               Disabled="@_isLoading"
-               Label="连续对话"
-               Color="Color.Primary"
-               T="bool"
-               CheckedChanged="ContextChanged" />
 </div>
 @code {
 
@@ -71,6 +90,8 @@
     private bool _isSaveContext = false;
     private bool _isShowWarning => _isSaveContext;
     private List<QuestionAndAnswer> _histories = null!;
+    private MudChip _modelSelected;
+    private MudChip? _saveContextSelected;
 
     protected override Task OnInitializedAsync()
     {
@@ -87,9 +108,24 @@
         InvokeAsync(RequestOpenAI);
     }
 
-    private void ContextChanged(bool isSaveContext)
+    private async void OnSaveContextChanged()
     {
-        _isSaveContext = isSaveContext;
+        if (_saveContextSelected == null)
+        {
+            _isSaveContext = false;
+            return;
+        }
+
+        if (_histories.Count > 0)
+        {
+            var result = await DialogService.ShowMessageBox("提示", "是否清除历史对话？不清除可能会导致结果不准确！", "清除", "不清除");
+            if (result != null && result == true)
+            {
+                _histories.Clear();
+                StateHasChanged();
+            }
+        }
+        _isSaveContext = true;
     }
 
     private async void BeginChat()
@@ -118,7 +154,7 @@
         try
         {
             string prompt = $"{context}{question}";
-            var postObj = new { prompt };
+            var postObj = new { prompt, ChatType = Convert.ToInt32(_modelSelected.Text) };
             var response = await HttpClientFactory.CreateClient("WebAPI").PostAsJsonAsync($"chatgpt/do-chat", postObj);
             var result = await response.Content.ReadFromJsonAsync<ApiResult<string>>();
 

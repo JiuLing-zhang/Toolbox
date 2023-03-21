@@ -1,0 +1,14 @@
+﻿@if (IsVisible)
+{
+    <div class="mask">
+        <MudPaper Class="pl-10 pr-10 pt-5 pb-5 d-flex align-center">
+            <MudProgressCircular Color="Color.Info" Indeterminate="true" />
+            <MudText Class="ml-4">@ContentText</MudText>
+        </MudPaper>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string ContentText { get; set; }
+}

@@ -98,7 +98,10 @@
     </MudItem>
 </MudGrid>
 
+<DialogLoading IsVisible="@_isLoading" ContentText="正在计算"></DialogLoading>
+
 @code {
+    private bool _isLoading = false;
     private string _currentHashType = "SHA1";
     private readonly List<string> _hashTypeList = new List<string>() { "SHA1", "SHA256" };
     private static readonly string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-10";
@@ -135,6 +138,7 @@
             Dialog.Show<DialogOk>("提示", parameters, options);
             return;
         }
+        _isLoading = true;
         _fileName = e.GetMultipleFiles()[0].Name;
         var ms = new MemoryStream();
         await e.GetMultipleFiles()[0].OpenReadStream(maxFileSize).CopyToAsync(ms);
@@ -193,6 +197,7 @@
             if (_inputText.IsEmpty())
             {
                 _hashResult = "";
+                _isLoading = false;
                 return;
             }
             if (_isUpper)
@@ -209,6 +214,7 @@
             if (_fileBytes == null)
             {
                 _hashResult = "";
+                _isLoading = false;
                 return;
             }
             if (_isUpper)
@@ -219,8 +225,8 @@
             {
                 _hashResult = SHA1Utils.GetBytesValueToLower(_fileBytes);
             }
+            _isLoading = false;
             StateHasChanged();
-
         }
     }
 
@@ -231,6 +237,7 @@
             if (_inputText.IsEmpty())
             {
                 _hashResult = "";
+                _isLoading = false;
                 return;
             }
             if (_isUpper)
@@ -247,6 +254,7 @@
             if (_fileBytes == null)
             {
                 _hashResult = "";
+                _isLoading = false;
                 return;
             }
             if (_isUpper)
@@ -257,8 +265,8 @@
             {
                 _hashResult = SHA256Utils.GetBytesValueToLower(_fileBytes);
             }
+            _isLoading = false;
             StateHasChanged();
-
         }
     }
 
