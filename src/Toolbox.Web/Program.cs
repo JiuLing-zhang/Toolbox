@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Toolbox.Web;
 using MudBlazor.Services;
 using MudBlazor;
+using Toolbox.Pages;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -18,4 +19,6 @@ builder.Services.AddHttpClient("WebAPI", client =>
 
 builder.Services.AddMudServices();
 builder.Services.AddMudMarkdownServices();
+
+PlatformSettings.IsApp = false;
 await builder.Build().RunAsync();

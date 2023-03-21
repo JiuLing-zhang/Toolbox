@@ -1,5 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using MudBlazor;
 using MudBlazor.Services;
+using Toolbox.Pages;
 
 namespace Toolbox.App
 {
@@ -21,7 +24,18 @@ namespace Toolbox.App
             builder.Services.AddBlazorWebViewDeveloperTools();
             builder.Logging.AddDebug();
 #endif
+
+            using var stream = FileSystem.OpenAppPackageFileAsync("appsettings.json").Result;
+            builder.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddJsonStream(stream).Build());
+
+            builder.Services.AddHttpClient("WebAPI", (sp, client) =>
+            {
+                client.BaseAddress = new Uri(sp.GetService<IConfiguration>()?.GetValue<string>("WebAPIHost") ?? throw new ArgumentException());
+            });
             builder.Services.AddMudServices();
+            builder.Services.AddMudMarkdownServices();
+
+            PlatformSettings.IsApp = true;
             return builder.Build();
         }
     }

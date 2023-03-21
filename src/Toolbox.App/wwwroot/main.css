@@ -1,0 +1,12 @@
+﻿.main-img {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px
+}
+
+    .main-img img {
+        max-width: 40vh;
+        height: auto;
+        margin-top: 20vh
+    }
