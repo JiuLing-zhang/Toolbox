@@ -1,8 +1,5 @@
-using JiuLing.CommonLibs.ExtensionMethods;
+﻿using JiuLing.CommonLibs.ExtensionMethods;
 using Microsoft.Extensions.Options;
-using OpenAI.GPT3;
-using OpenAI.GPT3.Managers;
-using OpenAI.GPT3.ObjectModels.RequestModels;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Toolbox.Api;
@@ -36,30 +33,15 @@ builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSet
 
 builder.Services.AddHttpClient("OpenAI", (sp, client) =>
 {
-    var address = sp.GetService<IOptions<AppSettings>>()?.Value.OpenAI.WebProxyAddress;
-    if (address.IsNotEmpty())
+    var appSettings = sp.GetService<IOptions<AppSettings>>()?.Value ?? throw new ArgumentException("配置文件异常");
+    if (appSettings.OpenAI.WebProxyAddress.IsNotEmpty())
     {
         var handler = new HttpClientHandler()
         {
-            Proxy = new WebProxy(address)
+            Proxy = new WebProxy(appSettings.OpenAI.WebProxyAddress)
         };
         client = new HttpClient(handler);
     }
-});
-
-builder.Services.AddScoped<OpenAIService>(sp =>
-{
-    return new OpenAIService(new OpenAiOptions()
-    {
-        ApiKey = sp.GetService<IOptions<AppSettings>>()?.Value.OpenAI.ChatGPTApiKey ??
-                  throw new ArgumentNullException()
-
-    }, sp.GetService<IHttpClientFactory>()?.CreateClient("OpenAI"));
-});
-builder.Services.AddScoped(serviceProvider => new CompletionCreateRequest()
-{
-    Temperature = 0,
-    MaxTokens = 1000
 });
 
 builder.Services.AddCors(options =>

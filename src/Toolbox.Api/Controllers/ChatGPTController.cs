@@ -1,22 +1,23 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using OpenAI.GPT3.Managers;
-using OpenAI.GPT3.ObjectModels.RequestModels;
+using System.Text.Json.Nodes;
+using System.Text.Json;
 using Toolbox.Api.Models;
 using Toolbox.Api.Models.Request;
+using System.Net.Http;
+using System.Text;
 
 namespace Toolbox.Api.Controllers;
 [Route("chatgpt")]
 [ApiController]
 public class ChatGPTController : ControllerBase
 {
-    private readonly OpenAIService _service;
-    private readonly CompletionCreateRequest _createRequest;
+    const string OpenAIApi = "https://api.openai.com/v1/chat/completions";
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly AppSettings _appSettings;
-    public ChatGPTController(OpenAIService service, CompletionCreateRequest createRequest, IOptions<AppSettings> appSettingsOptions)
+    public ChatGPTController(IHttpClientFactory httpClientFactory, IOptions<AppSettings> appSettingsOptions)
     {
-        _service = service;
-        _createRequest = createRequest;
+        _httpClientFactory = httpClientFactory;
         _appSettings = appSettingsOptions.Value;
     }
 
@@ -27,14 +28,31 @@ public class ChatGPTController : ControllerBase
         {
             return Ok(new ApiResponse(1, "语境有点长了，请刷新页面后重新玩耍~~~~"));
         }
-        _createRequest.Prompt = request.Prompt;
-        var res = await _service.Completions.CreateCompletion(_createRequest, OpenAI.GPT3.ObjectModels.Models.TextDavinciV3);
 
-        if (!res.Successful)
+        var messages = new List<OpenAIMessage>();
+        messages.Add(new OpenAIMessage("user", request.Prompt));
+        if (request.ChatType == Enums.ChatTypeEnum.Coder)
         {
-            return Ok(new ApiResponse(2, res.Error?.Message ?? "对方似乎没搞懂你想干啥...."));
+            messages.Add(new OpenAIMessage("system", "我是一个程序员，我专门负责代码相关工作。"));
         }
-        return Ok(new ApiResponse<string>(0, "操作成功", res.Choices.First().Text.Trim('\n')));
+        var postObj = new OpenAIModel("gpt-3.5-turbo", messages);
 
+        var requestMessage = new HttpRequestMessage(HttpMethod.Post, OpenAIApi);
+        requestMessage.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _appSettings.OpenAI.ChatGPTApiKey);
+        requestMessage.Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postObj), Encoding.UTF8, "application/json");
+        var response = await _httpClientFactory.CreateClient("OpenAI").SendAsync(requestMessage);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var openAIResult = JsonSerializer.Deserialize<OpenAIResult>(responseBody);
+        if (openAIResult == null)
+        {
+            return Ok(new ApiResponse(2, "服务器未返回了空数据"));
+        }
+
+        if (openAIResult.Error != null)
+        {
+            return Ok(new ApiResponse(3, $"出错啦：{openAIResult.Error.Message}"));
+        }
+        return Ok(new ApiResponse<string>(0, "操作成功", openAIResult.Choices[0].Message.Content));
     }
 }
