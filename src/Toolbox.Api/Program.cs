@@ -24,6 +24,7 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 builder.Services.AddTransient<IAppPublishService, AppPublishService>();
 builder.Services.AddTransient<IAppShowService, AppShowService>();
+builder.Services.AddTransient<IAppInfoService, AppInfoService>();
 
 builder.Services.AddTransient<IAppInfoRepository, AppInfoRepository>();
 builder.Services.AddTransient<IAppBaseRepository, AppBaseRepository>();

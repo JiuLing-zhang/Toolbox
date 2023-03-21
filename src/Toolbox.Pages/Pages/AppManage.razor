@@ -1,8 +1,10 @@
 ﻿@page "/app"
 @using System.Text.Json
+@using Microsoft.Extensions.Configuration
 @using Toolbox.Pages.Models
 
 @inject IHttpClientFactory HttpClientFactory;
+@inject IConfiguration Configuration
 
 <PageTitle>码术 - 开源工具</PageTitle>
 
@@ -71,7 +73,7 @@
                                     <MudText Typo="Typo.subtitle2">平台:</MudText>
                                     <MudImage Class="ml-3" Src="@($"_content/Toolbox.Pages/images/{icon}.png")" Width="15" Height="15"></MudImage>
                                     <MudText Class="ml-1" Typo="Typo.subtitle2">@version.PlatformType</MudText>
-                                    <MudLink Disabled Class="ml-2" Href="@($"api/download/{version.DownloadId}")" Underline="Underline.None">下载</MudLink>
+                                    <MudLink Class="ml-2" Href="@($"{Configuration["WebAPIHost"]}/app/download/{version.DownloadId}")" Underline="Underline.None">下载</MudLink>
                                 </MudItem>
 
                                 <MudItem Class="d-flex align-center" xs="5">
