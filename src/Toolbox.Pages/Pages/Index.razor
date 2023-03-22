@@ -5,47 +5,48 @@
 <PageTitle>码术</PageTitle>
 
 <MudGrid Class="mt-10" Spacing="6">
-    <MudItem xs="12" md="6">
+    <MudItem xs="12" md="6" Style="padding-left: 10%; padding-right: 10%;">
         <div class="tile" @onclick="@(()=>DoNavigate("/app"))">
             <div class="item">
                 找开源软件或组件？
             </div>
         </div>
     </MudItem>
-    <MudItem xs="12" md="6">
+    <MudItem xs="12" md="6" Style="padding-left: 10%; padding-right: 10%;">
         <div class="tile" @onclick="@(()=>DoNavigate("/chat"))">
             <div class="item">
                 体验 AI 对话？
             </div>
         </div>
     </MudItem>
-    <MudItem xs="12" md="6">
+    <MudItem xs="12" md="6" Style="padding-left: 10%; padding-right: 10%;">
         <div class="tile" @onclick="@(()=>DoNavigate("/hash"))">
             <div class="item">
                 需要计算哈希值？
             </div>
         </div>
     </MudItem>
-    <MudItem xs="12" md="6">
+    <MudItem xs="12" md="6" Style="padding-left: 10%; padding-right: 10%;">
         <div class="tile">
             <div class="item">
-                想点对点传输文件？
-                <MudChip Variant="Variant.Outlined" Color="Color.Warning">开发中</MudChip>
+                想 P2P 传输文件？
+                <MudChip Variant="Variant.Text" Class="mt-2" Color="Color.Warning">开发中</MudChip>
             </div>
         </div>
     </MudItem>
-    <MudItem xs="12" md="6">
+    <MudItem xs="12" md="6" Style="padding-left: 10%; padding-right: 10%;">
         <div class="tile">
             <div class="item">
                 进行文件安全校验？
-                <MudChip Variant="Variant.Outlined" Color="Color.Warning">开发中</MudChip>
+                <MudChip Variant="Variant.Text" Class="mt-2" Color="Color.Warning">开发中</MudChip>
             </div>
         </div>
     </MudItem>
-    <MudItem xs="12" md="6">
+    <MudItem xs="12" md="6" Style="padding-left: 10%; padding-right: 10%;">
         <div class="tile">
             <div class="item">
-                更多内容？计划中....
+                更多内容？
+                <MudChip Variant="Variant.Text" Class="mt-2" Color="Color.Warning">计划中</MudChip>
             </div>
         </div>
     </MudItem>
