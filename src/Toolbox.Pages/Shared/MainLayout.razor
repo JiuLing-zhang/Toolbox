@@ -11,7 +11,7 @@
 
         @if (!PlatformSettings.IsApp)
         {
-            <MudMenu Label="下载客户端" Variant="Variant.Filled" Color="Color.Secondary" EndIcon="@Icons.Material.Filled.Download">
+            <MudMenu Label="下载客户端" Variant="Variant.Filled" Color="Color.Dark" Dense="true" AnchorOrigin="Origin.BottomCenter">
                 <MudMenuItem>
                     <MudImage Class="mr-1" Src="@($"_content/Toolbox.Pages/images/windows.png")" Width="15" Height="15"></MudImage>
                     Windows 平台
@@ -20,7 +20,6 @@
                     <MudImage Class="mr-1" Src="@($"_content/Toolbox.Pages/images/android.png")" Width="15" Height="15"></MudImage>
                     Android 平台
                 </MudMenuItem>
-                <MudMenuItem Disabled>IOS</MudMenuItem>
             </MudMenu>
         }
         <MudIcon Class="ml-5" Icon="@Icons.Material.Filled.TipsAndUpdates" />

@@ -28,12 +28,12 @@
                      OnClick="OnSaveContextChanged">连续对话模式</MudChip>
         </MudChipSet>
     </div>
-    
+
     @if (_isShowWarning)
     {
         <MudAlert Severity="Severity.Warning"
-                  Class="mt-3"
-                  ContentAlignment="HorizontalAlignment.Left">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
+              Class="mt-3"
+              ContentAlignment="HorizontalAlignment.Left">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
     }
 
     @if (_histories.Count == 0)
@@ -66,8 +66,14 @@
                      Icon="@Icons.Material.Filled.SmartToy"
                      Color="Color.Secondary"
                      Size="Size.Small" />
-                    <MudMarkdown Value="@history.Answer" />
-                    
+                    @if (_modelSelected.Text == "1")
+                    {
+                        <MudMarkdown Value="@history.Answer" />
+                    }
+                    else
+                    {
+                        <MudText Class="ml-2" Typo="Typo.body1">@history.Answer</MudText>
+                    }
                 </div>
             }
         </MudPaper>

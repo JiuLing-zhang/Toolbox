@@ -30,7 +30,7 @@
 </MudButtonGroup>
 
 <MudGrid Spacing="3" Class="mt-4">
-    <MudItem xs="6">
+    <MudItem xs="12" md="6">
         <MudText Typo="Typo.subtitle2">字符串计算</MudText>
         <MudTextField T="string"
                       Immediate=true
@@ -39,7 +39,7 @@
                       TextChanged="@((value)=>OnInputTextChanged(value))"
                       Lines="6" />
     </MudItem>
-    <MudItem xs="6">
+    <MudItem xs="12" md="6">
         <MudText Typo="Typo.subtitle2">文件计算</MudText>
         <MudStack Style="width: 100%">
             <MudFileUpload T="IBrowserFile" OnFilesChanged="OnInputFileChanged" Hidden="false" Class="flex-1" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"

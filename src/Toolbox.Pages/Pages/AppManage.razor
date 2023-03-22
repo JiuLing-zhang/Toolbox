@@ -27,7 +27,7 @@
                     <MudPaper Class="mt-5 mb-5 pa-5" Elevation="3">
                         <MudSkeleton Animation="Animation.Wave" Width="30%" />
                         <MudSkeleton Animation="Animation.Wave" Width="60%" />
-                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="60%" Height="110px" />
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="70%" Height="110px" />
                     </MudPaper>
                 }
             }
@@ -67,28 +67,28 @@
                             }
 
                             <MudGrid Class="mt-2">
-                                <MudItem Class="d-flex align-center" xs="12">
+                                <MudItem Class="d-flex align-center" xs="12" md="12">
                                     <MudText Typo="Typo.subtitle2">平台:</MudText>
                                     <MudImage Class="ml-3" Src="@($"_content/Toolbox.Pages/images/{icon}.png")" Width="15" Height="15"></MudImage>
                                     <MudText Class="ml-1" Typo="Typo.subtitle2">@version.PlatformType</MudText>
                                     <MudLink Class="ml-2" Href="@($"{Configuration["WebAPIHost"]}/app/download/{version.DownloadId}")" Underline="Underline.None">下载</MudLink>
                                 </MudItem>
 
-                                <MudItem Class="d-flex align-center" xs="5">
+                                <MudItem Class="d-flex align-center" xs="12" md="5">
                                     <MudText Typo="Typo.subtitle2">版本:</MudText>
                                     <MudText Class="ml-3" Typo="Typo.subtitle2">@version.VersionName</MudText>
                                 </MudItem>
 
-                                <MudItem Class="d-flex align-center" xs="5">
+                                <MudItem Class="d-flex align-center" xs="12" md="5">
                                     <MudText Typo="Typo.subtitle2">发布时间:</MudText>
                                     <MudText Class="ml-3" Typo="Typo.subtitle2">@version.PublishTime</MudText>
                                 </MudItem>
-                                <MudItem Class="d-flex align-center" xs="5">
+                                <MudItem Class="d-flex align-center" xs="12" md="5">
                                     <MudText Typo="Typo.subtitle2">大小:</MudText>
                                     <MudText Class="ml-3" Typo="Typo.subtitle2">@version.FileLengthMb</MudText>
                                 </MudItem>
 
-                                <MudItem Class="d-flex align-center" xs="5">
+                                <MudItem Class="d-flex align-center" xs="12" md="5">
                                     <MudText Typo="Typo.subtitle2">@version.SignType.ToString():</MudText>
                                     <MudText Class="ml-8" Typo="Typo.subtitle2">@version.SignValue</MudText>
                                 </MudItem>
@@ -114,7 +114,7 @@
                     <MudPaper Class="mt-5 mb-5 pa-5" Elevation="3">
                         <MudSkeleton Animation="Animation.Wave" Width="30%" />
                         <MudSkeleton Animation="Animation.Wave" Width="60%" />
-                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="60%" Height="110px" />
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="70%" Height="110px" />
                     </MudPaper>
                 }
             }
@@ -124,12 +124,16 @@
             foreach (var component in _components)
             {
                 <MudPaper Class="mt-5 mb-5 pa-5" Elevation="3">
-                    <div style="display: flex; align-items: center;">
-                        <MudImage Src="@component.Icon" Width="20" Height="20" />
-                        <MudText Class="ml-3" Typo="Typo.subtitle1" Style="font-weight: bold;">@component.Name</MudText>
-                        <MudImage Src="@($"https://img.shields.io/nuget/v/{component.Name}")" Class="ml-4" />
-                        <MudImage Src="@($"https://img.shields.io/nuget/dt/{component.Name}")" Class="ml-2" />
-                    </div>
+                    <MudGrid Class="mt-2">
+                        <MudItem Class="d-flex align-center" xs="12" md="6">
+                            <MudImage Src="@component.Icon" Width="20" Height="20" />
+                            <MudText Class="ml-3" Typo="Typo.subtitle1" Style="font-weight: bold;">@component.Name</MudText>
+                        </MudItem>
+                        <MudItem Class="d-flex align-center" xs="12" md="6">
+                            <MudImage Src="@($"https://img.shields.io/nuget/v/{component.Name}")"/>
+                            <MudImage Src="@($"https://img.shields.io/nuget/dt/{component.Name}")" Class="ml-2" />
+                        </MudItem>
+                    </MudGrid>           
                     <MudText Class="mt-5" Typo="Typo.body2">
                         @component.Description
                     </MudText>
