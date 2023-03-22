@@ -1,7 +1,6 @@
 ﻿namespace Toolbox.Api;
 public class AppSettings
 {
-    public string[] CorsOrigins { get; set; } = null!;
     public OpenAIAppSettings OpenAI { get; set; } = null!;
 }
 

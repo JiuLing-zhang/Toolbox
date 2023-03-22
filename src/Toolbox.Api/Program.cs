@@ -45,18 +45,9 @@ builder.Services.AddHttpClient("OpenAI", (sp, client) =>
     }
 });
 
-builder.Services.AddCors(options =>
+builder.Services.AddCors(setup =>
 {
-    options.AddPolicy("MyPolicy", x =>
-    {
-        var origins = builder.Configuration["CorsOrigins"];
-        if (origins.IsNotEmpty())
-        {
-            x.WithOrigins(origins.Split(";"))
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-        }
-    });
+    setup.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
 var app = builder.Build();
@@ -75,5 +66,5 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-app.UseCors("MyPolicy");
+app.UseCors();
 app.Run();

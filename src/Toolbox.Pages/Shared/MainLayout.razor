@@ -1,4 +1,11 @@
-﻿@inherits LayoutComponentBase
+﻿@using Microsoft.Extensions.Configuration;
+@using Toolbox.Pages.Shared.Dialogs;
+
+@inherits LayoutComponentBase
+
+@inject NavigationManager NavigationManager
+@inject IConfiguration Configuration
+@inject IDialogService DialogService
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -11,12 +18,16 @@
 
         @if (!PlatformSettings.IsApp)
         {
-            <MudMenu Label="下载客户端" Variant="Variant.Filled" Color="Color.Dark" Dense="true" AnchorOrigin="Origin.BottomCenter">
-                <MudMenuItem>
+            <MudMenu Label="下载客户端"
+                 Variant="Variant.Filled"
+                 Color="Color.Dark"
+                 Dense="true"
+                 AnchorOrigin="Origin.BottomCenter">
+                <MudMenuItem OnClick="@(()=>OnDownloadClick("6e13d0edd2d01d60aa476693600b147e"))">
                     <MudImage Class="mr-1" Src="@($"_content/Toolbox.Pages/images/windows.png")" Width="15" Height="15"></MudImage>
                     Windows 平台
                 </MudMenuItem>
-                <MudMenuItem>
+                <MudMenuItem OnClick="@(()=>OnDownloadClick("7f3678cc7d66c573b938d1a7d793fd94"))">
                     <MudImage Class="mr-1" Src="@($"_content/Toolbox.Pages/images/android.png")" Width="15" Height="15"></MudImage>
                     Android 平台
                 </MudMenuItem>
@@ -45,5 +56,16 @@
     void ToggleDrawer()
     {
         open = !open;
+    }
+
+    private async void OnDownloadClick(string id)
+    {
+        var result = await DialogService.ShowMessageBox("警告", "当前版本未集成自动更新模块，确认要下载吗？", "下载", "取消");
+        if (result == null || result == false)
+        {
+            return;
+        }
+        var url = $"{Configuration["WebAPIHost"]}/app/download/{id}";
+        NavigationManager.NavigateTo(url);
     }
 }
