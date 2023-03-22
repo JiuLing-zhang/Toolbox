@@ -14,7 +14,7 @@ internal class AppBaseRepository : IAppBaseRepository
 
     public async Task<List<AppBase>> GetAllAsync()
     {
-        return await _dbContext.AppBase.Where(x => x.IsShow).OrderBy(x => x.Sort).ToListAsync();
+        return await _dbContext.AppBase.OrderBy(x => x.Sort).ToListAsync();
     }
 
     public async Task<AppBase?> GetOneAsync(string appKey)

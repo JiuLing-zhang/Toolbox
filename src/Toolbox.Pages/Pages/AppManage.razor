@@ -46,7 +46,7 @@
                     <MudText Typo="Typo.body2">@app.Description</MudText>
                     @if (app.Versions == null)
                     {
-                        <MudAlert Class="mt-2" Severity="Severity.Info" Dense="true">没有可用的版本信息</MudAlert>
+                        <MudAlert Class="mt-2" Severity="Severity.Info" Dense="true">没有可用的版本信息。仓库有源码，请自行编译</MudAlert>
                     }
                     else
                     {
@@ -130,10 +130,10 @@
                             <MudText Class="ml-3" Typo="Typo.subtitle1" Style="font-weight: bold;">@component.Name</MudText>
                         </MudItem>
                         <MudItem Class="d-flex align-center" xs="12" md="6">
-                            <MudImage Src="@($"https://img.shields.io/nuget/v/{component.Name}")"/>
+                            <MudImage Src="@($"https://img.shields.io/nuget/v/{component.Name}")" />
                             <MudImage Src="@($"https://img.shields.io/nuget/dt/{component.Name}")" Class="ml-2" />
                         </MudItem>
-                    </MudGrid>           
+                    </MudGrid>
                     <MudText Class="mt-5" Typo="Typo.body2">
                         @component.Description
                     </MudText>

@@ -34,6 +34,12 @@ internal class AppShowService : IAppShowService
                 GitHub = appBase.GitHub
             };
 
+            if (!appBase.IsShow)
+            {
+                result.Add(resultItem);
+                continue;
+            }
+
             string appKey = appBase.AppKey;
 
             IEnumerable<AppInfo> appVersions = appInfoList.Where(x => x.AppKey == appKey).ToList();
