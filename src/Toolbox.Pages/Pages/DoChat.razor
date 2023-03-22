@@ -38,7 +38,9 @@
 
     @if (_histories.Count == 0)
     {
-        <MudAlert Class="mt-3" Icon="@Icons.Material.Filled.SportsScore" Severity="Severity.Success">欢迎来到 AI 世界</MudAlert>
+        <MudAlert Class="mt-3" Icon="@Icons.Material.Filled.Person" Severity="Severity.Success">普通模式 - 普通接入</MudAlert>
+        <MudAlert Class="mt-1" Icon="@Icons.Material.Filled.Code" Severity="Severity.Success">程序员模式 - 接入了一个大神程序员</MudAlert>
+        <MudAlert Class="mt-1" Icon="@Icons.Material.Filled.Abc" Severity="Severity.Success">连续对话模式 - 会保存聊天语境</MudAlert>
     }
 
     @foreach (var history in _histories)
