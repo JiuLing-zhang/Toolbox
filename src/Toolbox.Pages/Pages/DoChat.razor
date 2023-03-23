@@ -45,9 +45,11 @@
 
     @foreach (var history in _histories)
     {
+
         <MudPaper Class="pa-2 mt-3" Square="true" Outlined="true">
-            <div class="question">
-                <MudIcon Icon="@Icons.Material.Filled.Chat"
+            <div class="d-flex align-start mb-3">
+                <MudIcon Class="mt-1"
+                     Icon="@Icons.Material.Filled.Chat"
                      Color="Color.Primary"
                      Size="Size.Small" />
                 <MudText Class="ml-2" Typo="Typo.subtitle1">@history.Question</MudText>
@@ -63,7 +65,7 @@
             }
             else
             {
-                <div class="answer">
+                <div class="d-flex">
                     <MudIcon Class="mr-2"
                      Icon="@Icons.Material.Filled.SmartToy"
                      Color="Color.Secondary"
@@ -78,6 +80,16 @@
                     }
                 </div>
             }
+            @if (_isShowRetry && history.Equals(_histories.Last()))
+            {
+                <MudButton Class="ml-7"
+                   Variant="Variant.Filled"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Autorenew"
+                   OnClick="RetryChat"
+                   Color="Color.Error">重试</MudButton>
+            }
+
         </MudPaper>
     }
 </div>
@@ -93,7 +105,7 @@
                   OnKeyUp="KeyUp" />
 </div>
 @code {
-
+    private bool _isShowRetry = false;
     private bool _isLoading;
     private string _searchKey = "";
     private bool _isSaveContext = false;
@@ -141,7 +153,17 @@
     {
         await RequestOpenAI();
     }
-
+    private async void RetryChat()
+    {
+        var question = _histories.Last().Question;
+        if (question.IndexOf("提问:") == 0)
+        {
+            question = question.Substring(3);
+        }
+        _searchKey = question;
+        _histories.Remove(_histories.Last());
+        await RequestOpenAI();
+    }
     private async Task RequestOpenAI()
     {
         if (_searchKey.IsEmpty())
@@ -153,6 +175,7 @@
             return;
         }
         _isLoading = true;
+        _isShowRetry = false;
 
         string question = _isSaveContext ? $"提问:{_searchKey}" : _searchKey;
         string answer = "";
@@ -167,21 +190,21 @@
             var response = await HttpClientFactory.CreateClient("WebAPI").PostAsJsonAsync($"chatgpt/do-chat", postObj);
             var result = await response.Content.ReadFromJsonAsync<ApiResult<string>>();
 
-            if (result == null)
+            if (result == null || result.Code != 0 || result.Data == null)
             {
-                answer = "服务器未响应。";
+                answer = result?.Message ?? "服务器未正确响应";
+                if (result?.Code == 10)
+                {
+                    _isShowRetry = true;
+                }
                 return;
             }
-            if (result.Code != 0)
-            {
-                answer = result.Message;
-                return;
-            }
-            answer = result.Data ?? "服务器的数据似乎有点异常。";
+            answer = result.Data;
         }
         catch (Exception ex)
         {
-            answer = $"崩了，崩了，{ex.Message}，{ex.StackTrace}";
+            answer = $"出错了：{ex.Message}";
+            _isShowRetry = true;
         }
         finally
         {

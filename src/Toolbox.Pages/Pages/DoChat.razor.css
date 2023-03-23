@@ -6,16 +6,6 @@
     margin-bottom: 10px;
 }
 
-.question {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.answer {
-    display: flex;
-}
-
 .chat-tools {
     display: flex;
     align-items: center;

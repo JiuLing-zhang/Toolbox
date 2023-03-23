@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System.Text.Json.Nodes;
+using System.Text;
 using System.Text.Json;
 using Toolbox.Api.Models;
 using Toolbox.Api.Models.Request;
-using System.Net.Http;
-using System.Text;
 
 namespace Toolbox.Api.Controllers;
 [Route("chatgpt")]
@@ -26,7 +24,7 @@ public class ChatGPTController : ControllerBase
     {
         if (request.Prompt.Length > _appSettings.OpenAI.ContextMaxLength)
         {
-            return Ok(new ApiResponse(1, "语境有点长了，请刷新页面后重新玩耍~~~~"));
+            return Ok(new ApiResponse(1, "内容已超过最大长度限制"));
         }
 
         var messages = new List<OpenAIMessage>();
@@ -40,19 +38,26 @@ public class ChatGPTController : ControllerBase
         var requestMessage = new HttpRequestMessage(HttpMethod.Post, OpenAIApi);
         requestMessage.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _appSettings.OpenAI.ChatGPTApiKey);
         requestMessage.Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postObj), Encoding.UTF8, "application/json");
-        var response = await _httpClientFactory.CreateClient("OpenAI").SendAsync(requestMessage);
-
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var openAIResult = JsonSerializer.Deserialize<OpenAIResult>(responseBody);
-        if (openAIResult == null)
+        try
         {
-            return Ok(new ApiResponse(2, "服务器未返回了空数据"));
-        }
+            var response = await _httpClientFactory.CreateClient("OpenAI").SendAsync(requestMessage);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            var openAIResult = JsonSerializer.Deserialize<OpenAIResult>(responseBody);
+            if (openAIResult == null)
+            {
+                return Ok(new ApiResponse(10, "服务器未返回了空数据"));
+            }
 
-        if (openAIResult.Error != null)
-        {
-            return Ok(new ApiResponse(3, $"出错啦：{openAIResult.Error.Message}"));
+            if (openAIResult.Error != null)
+            {
+                return Ok(new ApiResponse(10, $"出错啦：{openAIResult.Error.Message}"));
+            }
+            return Ok(new ApiResponse<string>(0, "操作成功", openAIResult.Choices[0].Message.Content));
+
         }
-        return Ok(new ApiResponse<string>(0, "操作成功", openAIResult.Choices[0].Message.Content));
+        catch (Exception ex)
+        {
+            return Ok(new ApiResponse(10, "服务器连接失败"));
+        }
     }
 }
