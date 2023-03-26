@@ -57,7 +57,7 @@ internal class AppShowService : IAppShowService
                 versions.Add(androidVersion);
             }
 
-            BuildAppInfo(appVersions, PlatformEnum.IOS, out var iosVersion);
+            BuildAppInfo(appVersions, PlatformEnum.iOS, out var iosVersion);
             if (iosVersion != null)
             {
                 versions.Add(iosVersion);

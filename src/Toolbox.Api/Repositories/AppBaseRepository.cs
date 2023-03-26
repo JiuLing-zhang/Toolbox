@@ -50,4 +50,10 @@ internal class AppBaseRepository : IAppBaseRepository
         _dbContext.AppBase.Update(appBase);
         await _dbContext.SaveChangesAsync();
     }
+
+    public async Task<bool> ExistAsync(string appKey)
+    {
+        var count = await _dbContext.AppBase.CountAsync(x => x.AppKey == appKey);
+        return count > 0;
+    }
 }

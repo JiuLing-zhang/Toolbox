@@ -8,6 +8,9 @@ using Toolbox.Api.ErrorHandler;
 using Toolbox.Api.Interface;
 using Toolbox.Api.Repositories;
 using Toolbox.Api.Services;
+using Microsoft.AspNetCore.StaticFiles;
+using Toolbox.Api.Interface.Services;
+using Toolbox.Api.Interface.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -22,10 +25,14 @@ builder.Services.AddDbContext<AppDbContext>
     (options => options.UseNpgsql(builder.Configuration.GetConnectionString("appConnection")));
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
+builder.Services.AddTransient<IDatabaseConfigService, DatabaseConfigService>();
+builder.Services.AddTransient<IAppService, AppService>();
 builder.Services.AddTransient<IAppPublishService, AppPublishService>();
 builder.Services.AddTransient<IAppShowService, AppShowService>();
 builder.Services.AddTransient<IAppInfoService, AppInfoService>();
 
+builder.Services.AddTransient<IAppReleaseRepository, AppReleaseRepository>();
+builder.Services.AddTransient<IConfigBaseRepository, ConfigBaseRepository>();
 builder.Services.AddTransient<IAppInfoRepository, AppInfoRepository>();
 builder.Services.AddTransient<IAppBaseRepository, AppBaseRepository>();
 builder.Services.AddTransient<IComponentRepository, ComponentRepository>();
@@ -65,6 +72,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+app.UseStaticFiles();
 app.MapControllers();
 app.UseCors();
 app.Run();

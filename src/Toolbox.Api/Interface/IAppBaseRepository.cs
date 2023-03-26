@@ -3,6 +3,7 @@
 namespace Toolbox.Api.Interface;
 public interface IAppBaseRepository
 {
+    public Task<bool> ExistAsync(string appKey);
     public Task<List<AppBase>> GetAllAsync();
 
     public Task<AppBase?> GetOneAsync(string appKey);
