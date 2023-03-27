@@ -11,6 +11,7 @@ public class AppPublishRequest
     public PlatformEnum Platform { get; set; }
 
     [Required(ErrorMessage = "版本号不能为空")]
+    [RegularExpression(@"^(\d+\.){3}\d+$", ErrorMessage = "版本号格式不正确")]
     public string VersionName { get; set; } = null!;
 
     [Required(ErrorMessage = "版本设置不能为空")]

@@ -14,8 +14,9 @@
                 <MudIcon Icon="@Icons.Material.Filled.CloudDone"></MudIcon>
                 <MudText Class="ml-1">软件发布</MudText>
             </div>
-            <MudForm @bind-IsValid="@success">
+            <MudForm Model="@model" @bind-IsValid="@success">
                 <MudSelect T="string"
+                           @bind-Value="model.AppKey"
                            Required="true"
                            RequiredError="请选择软件"
                            Label="软件名称"
@@ -26,14 +27,14 @@
 
                 <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
                     <MudText Class="mr-4">平台</MudText>
-                    <MudChipSet @bind-SelectedChip="Selected" Filter="true" Mandatory="true">
-                        <MudChip Text="grey">Windows</MudChip>
-                        <MudChip Text="grey">Android</MudChip>
-                        <MudChip Text="grey">iOS</MudChip>
-                    </MudChipSet>
+                    <MudRadioGroup @bind-SelectedOption="model.Platform">
+                        <MudRadio Option="@("Windows")">Windows</MudRadio>
+                        <MudRadio Option="@("Android")">Android</MudRadio>
+                        <MudRadio Option="@("iOS")">iOS</MudRadio>
+                    </MudRadioGroup>
                 </div>
 
-                <MudTextField T="string" Label="版本" Variant="Variant.Outlined" Required="true" RequiredError="用户名不能为空" HelperText="格式：1.2.3.4" />
+                <MudTextField T="string" Label="版本" Variant="Variant.Outlined" Required="true" RequiredError="版本号不能为空" HelperText="格式：1.2.3.4" />
 
                 <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
                     <MudText Class="mr-4">最小运行版本</MudText>
@@ -78,4 +79,6 @@
 @code {
     bool success;
     MudChip Selected;
+    public string SelectedOption { get; set; }
+    private AppPublishModel model = new();
 }

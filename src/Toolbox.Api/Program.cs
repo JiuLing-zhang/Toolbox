@@ -11,11 +11,20 @@ using Toolbox.Api.Services;
 using Microsoft.AspNetCore.StaticFiles;
 using Toolbox.Api.Interface.Services;
 using Toolbox.Api.Interface.Repositories;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.Mvc;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
+using Toolbox.Api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
+    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -24,6 +33,24 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>
     (options => options.UseNpgsql(builder.Configuration.GetConnectionString("appConnection")));
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = actionContext =>
+    {
+        var errors = actionContext.ModelState
+            .Where(e => e.Value != null && e.Value.Errors.Count > 0)
+            .Select(e => $"{e.Key}:{e.Value?.Errors.First().ErrorMessage}"
+          ).ToList();
+
+        var jsonOptions = new System.Text.Json.JsonSerializerOptions()
+        {
+            PropertyNamingPolicy = null,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+        };
+        return new JsonResult(new ApiResponse(999, $"参数验证失败[{string.Join(",", errors)}]"), jsonOptions);
+    };
+});
 
 builder.Services.AddTransient<IDatabaseConfigService, DatabaseConfigService>();
 builder.Services.AddTransient<IAppService, AppService>();
@@ -72,7 +99,16 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.UseStaticFiles();
+var fectProvider = new FileExtensionContentTypeProvider();
+fectProvider.Mappings.Add(".apk", "application/vnd.android.package-archive");
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", GlobalConfig.AppFolder)),
+    RequestPath = "/" + GlobalConfig.AppFolder,
+    ContentTypeProvider = fectProvider
+});
+
 app.MapControllers();
 app.UseCors();
 app.Run();

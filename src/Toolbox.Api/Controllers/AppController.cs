@@ -1,4 +1,5 @@
-﻿using System.Web;
+﻿using System.IO;
+using System.Web;
 using JiuLing.CommonLibs.ExtensionMethods;
 using Microsoft.AspNetCore.Mvc;
 using Toolbox.Api.Enums;
@@ -52,7 +53,8 @@ public class AppController : ControllerBase
         var fileExtension = Path.GetExtension(Path.GetFileName(request.File.FileName));
         fileName = $"{fileName}{fileExtension}";
 
-        var directory = Path.Combine(_hostEnvironment.ContentRootPath, "wwwroot", "apps");
+        var relativePath = $"{GlobalConfig.AppFolder}/{fileName}";
+        var directory = Path.Combine(_hostEnvironment.ContentRootPath, "wwwroot", GlobalConfig.AppFolder);
         if (!Directory.Exists(directory))
         {
             Directory.CreateDirectory(directory);
@@ -73,7 +75,7 @@ public class AppController : ControllerBase
                     signValue = JiuLing.CommonLibs.Security.SHA1Utils.GetFileValueToLower(stream);
                     break;
                 default:
-                    return Ok(new ApiResponse(4, "错误的签名方式")); 
+                    return Ok(new ApiResponse(4, "错误的签名方式"));
             }
         }
 
@@ -83,7 +85,7 @@ public class AppController : ControllerBase
             request.VersionName,
             request.IsMinVersion,
             request.Log ?? "",
-            filePath,
+            relativePath,
             (int)request.File.Length,
             request.SignType,
             signValue);
