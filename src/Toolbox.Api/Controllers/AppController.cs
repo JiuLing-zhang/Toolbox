@@ -35,9 +35,20 @@ public class AppController : ControllerBase
         return Ok(new ApiResponse<Dictionary<string, string>>(0, "操作成功", apps));
     }
 
-    [HttpPost("app-publish")]
+    [HttpPost("publish")]
     public async Task<IActionResult> Publish([FromForm] AppPublishRequest request)
     {
+
+        if (Request.Form.Files.Count != 1)
+        {
+            return Ok(new ApiResponse(101, "头像未成功上传"));
+        }
+        var file = Request.Form.Files[0];
+        if (file.Length == 0)
+        {
+            return Ok(new ApiResponse(102, "文件不能为空"));
+        }
+
         var config = await _databaseConfigService.GetOneAsync<PublishConfig>("publish");
         if (config == null)
         {
@@ -57,7 +68,7 @@ public class AppController : ControllerBase
         var random = JiuLing.CommonLibs.RandomUtils.GetOneByLength(4);
         var fileName = $"{request.AppKey}-{request.Platform}-{request.VersionName}-{random}".ToLower();
 
-        var fileExtension = Path.GetExtension(Path.GetFileName(request.File.FileName));
+        var fileExtension = Path.GetExtension(Path.GetFileName(file.FileName));
         fileName = $"{fileName}{fileExtension}";
 
         var relativePath = $"{GlobalConfig.AppFolder}/{fileName}";
@@ -70,7 +81,7 @@ public class AppController : ControllerBase
         var signValue = "";
         await using (var stream = System.IO.File.Create(filePath))
         {
-            await request.File.CopyToAsync(stream);
+            await file.CopyToAsync(stream);
             switch (request.SignType)
             {
                 case SignTypeEnum.None:
@@ -93,7 +104,7 @@ public class AppController : ControllerBase
             request.IsMinVersion,
             request.Log ?? "",
             relativePath,
-            (int)request.File.Length,
+            (int)file.Length,
             request.SignType,
             signValue);
         var result = await _appService.PublishAsync(model);

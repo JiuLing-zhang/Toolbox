@@ -2,6 +2,7 @@
 using Toolbox.Api.Enums;
 
 namespace Toolbox.Api.Models.Request;
+
 public class AppPublishRequest
 {
     [Required(ErrorMessage = "请选择App")]
@@ -24,7 +25,4 @@ public class AppPublishRequest
 
     [Required(ErrorMessage = "密码不能为空")]
     public string Password { set; get; } = null!;
-
-    [Required(ErrorMessage = "文件不能为空")]
-    public IFormFile File { get; set; } = null!;
 }

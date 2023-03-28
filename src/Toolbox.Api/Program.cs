@@ -42,13 +42,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
             .Where(e => e.Value != null && e.Value.Errors.Count > 0)
             .Select(e => $"{e.Key}:{e.Value?.Errors.First().ErrorMessage}"
           ).ToList();
-
-        var jsonOptions = new System.Text.Json.JsonSerializerOptions()
-        {
-            PropertyNamingPolicy = null,
-            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
-        };
-        return new JsonResult(new ApiResponse(999, $"参数验证失败[{string.Join(",", errors)}]"), jsonOptions);
+        return new JsonResult(new ApiResponse(999, $"参数验证失败[{string.Join(",", errors)}]"));
     };
 });
 

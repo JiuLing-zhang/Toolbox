@@ -3,6 +3,7 @@
 @using Microsoft.Extensions.Configuration
 @using Toolbox.Pages.Enums
 @using Toolbox.Pages.Models
+@using System.Text
 
 @inject IHttpClientFactory HttpClientFactory;
 @inject IConfiguration Configuration
@@ -47,7 +48,7 @@ else
                         <MudRadioGroup @bind-SelectedOption="_model.Platform" T="PlatformEnum">
                             <MudRadio Color="Color.Info" Option="@(PlatformEnum.Windows)">Windows</MudRadio>
                             <MudRadio Color="Color.Info" Option="@(PlatformEnum.Android)">Android</MudRadio>
-                            <MudRadio Color="Color.Info" Option="@(PlatformEnum.IOS)">iOS</MudRadio>
+                            <MudRadio Color="Color.Info" Option="@(PlatformEnum.iOS)">iOS</MudRadio>
                         </MudRadioGroup>
                     </div>
 
@@ -77,13 +78,13 @@ else
                               ReadOnly="true"
                               Required="true"
                               RequiredError="文件不能为空" />
-                    <MudFileUpload T="IBrowserFile" @bind-Files="_model.File" OnFilesChanged="UploadFiles">
+                    <MudFileUpload T="IBrowserFile" @bind-Files="_file" OnFilesChanged="UploadFiles">
                         <ButtonTemplate>
                             <MudButton HtmlTag="label"
                                    Variant="Variant.Filled"
                                    Color="Color.Info"
                                    StartIcon="@Icons.Material.Filled.CloudUpload"
-                                   for="@context">
+                                       for="@context">
                                 选择文件
                             </MudButton>
                         </ButtonTemplate>
@@ -117,7 +118,7 @@ else
     private MudForm _form;
     private Dictionary<string, string>? _apps;
     private readonly AppPublishModel _model = new();
-
+    private IBrowserFile _file;
     protected override async Task OnInitializedAsync()
     {
         await GetApps();
@@ -125,7 +126,7 @@ else
 
     private async Task GetApps()
     {
-        var response = await HttpClientFactory.CreateClient("WebAPI").GetStringAsync($"app/app-name-list");
+        var response = await HttpClientFactory.CreateClient("WebAPI").GetStringAsync("app/app-name-list");
         var result = JsonSerializer.Deserialize<ApiResult<Dictionary<string, string>>>(response);
         if (result == null || result.Code != 0)
         {
@@ -147,6 +148,22 @@ else
             return;
         }
 
-    }
+        var formData = new MultipartFormDataContent();
+        formData.Add(new StringContent(_model.AppKey), nameof(_model.AppKey));
+        formData.Add(new StringContent(Convert.ToInt32(_model.Platform).ToString()), nameof(_model.Platform));
+        formData.Add(new StringContent(_model.VersionName), nameof(_model.VersionName));
+        formData.Add(new StringContent(_model.IsMinVersion.ToString()), nameof(_model.IsMinVersion));
+        formData.Add(new StringContent(_model.Log), nameof(_model.Log));
+        formData.Add(new StringContent(Convert.ToInt32(_model.SignType).ToString()), nameof(_model.SignType));
+        formData.Add(new StringContent(_model.Password), nameof(_model.Password));
+        formData.Add(new StreamContent(_file.OpenReadStream()), "file", _model.FileName);
 
+        var response = await HttpClientFactory.CreateClient("WebAPI").PostAsync("app/publish", formData);
+        var json = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<ApiResult>(json);
+        if (result == null || result.Code != 0)
+        {
+            return;
+        }
+    }
 }
