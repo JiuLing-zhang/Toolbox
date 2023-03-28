@@ -28,6 +28,13 @@ public class AppController : ControllerBase
         _databaseConfigService = databaseConfigService;
     }
 
+    [HttpGet("app-name-list")]
+    public async Task<IActionResult> GetAppNamesAsync()
+    {
+        var apps = await _appShowService.GetAppNamesAsync();
+        return Ok(new ApiResponse<Dictionary<string, string>>(0, "操作成功", apps));
+    }
+
     [HttpPost("app-publish")]
     public async Task<IActionResult> Publish([FromForm] AppPublishRequest request)
     {

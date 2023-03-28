@@ -17,6 +17,12 @@ internal class AppShowService : IAppShowService
         _componentRepository = componentRepository;
     }
 
+    public async Task<Dictionary<string, string>> GetAppNamesAsync()
+    {
+        var appBaseList = await _appBaseRepository.GetAllAsync();
+        return appBaseList.ToDictionary(x => x.AppKey, x => x.AppName);
+    }
+
     public async Task<List<AppInfoResponse>> GetAppsAsync()
     {
         var result = new List<AppInfoResponse>();

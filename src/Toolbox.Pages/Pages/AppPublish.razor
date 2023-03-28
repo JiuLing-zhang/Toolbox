@@ -1,84 +1,152 @@
 ﻿@page "/app-publish"
 @using System.Text.Json
 @using Microsoft.Extensions.Configuration
+@using Toolbox.Pages.Enums
 @using Toolbox.Pages.Models
 
 @inject IHttpClientFactory HttpClientFactory;
 @inject IConfiguration Configuration
 
 <PageTitle>码术 - 开源工具</PageTitle>
-<MudGrid Class="mt-5 mb-5">
-    <MudItem xs="12" md="12">
-        <MudPaper Class="pa-4">
-            <div class="d-flex mb-3">
-                <MudIcon Icon="@Icons.Material.Filled.CloudDone"></MudIcon>
-                <MudText Class="ml-1">软件发布</MudText>
-            </div>
-            <MudForm Model="@model" @bind-IsValid="@success">
-                <MudSelect T="string"
-                           @bind-Value="model.AppKey"
+
+@if (_apps == null)
+{
+    <MudPaper Class="mt-5 mb-5 pa-5" Elevation="3">
+        <MudSkeleton Class="mt-3" Animation="Animation.Wave" Width="30%" Height="40px;" />
+        <MudSkeleton Class="mt-3" Animation="Animation.Wave" Width="60%" Height="60px;" />
+        <MudSkeleton Class="mt-3" Animation="Animation.Wave" Width="20%" />
+        <MudSkeleton Class="mt-3" Animation="Animation.Wave" Width="20%" Height="50px;" />
+        <MudSkeleton Class="mt-3" Animation="Animation.Wave" Width="80%" />
+        <MudSkeleton Class="mt-3" Animation="Animation.Wave" Width="70%" Height="30px;" />
+    </MudPaper>
+}
+else
+{
+    <MudGrid Class="mt-5 mb-5">
+        <MudItem xs="12" md="12">
+            <MudPaper Class="pa-4">
+                <div class="d-flex mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.CloudDone" Color="Color.Info"></MudIcon>
+                    <MudText Class="ml-1">软件发布</MudText>
+                </div>
+                <MudForm @ref="@_form" Model="@_model">
+                    <MudSelect T="string"
+                           @bind-Value="_model.AppKey"
                            Required="true"
                            RequiredError="请选择软件"
                            Label="软件名称"
                            Variant="Variant.Outlined">
-                    <MudSelectItem Value="@("")" />
-                    <MudSelectItem Value="@("UTF-8")" />
-                </MudSelect>
+                        @foreach (var app in _apps)
+                        {
+                            <MudSelectItem Value="@(app.Key)">@app.Value</MudSelectItem>
+                        }
+                    </MudSelect>
 
-                <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
-                    <MudText Class="mr-4">平台</MudText>
-                    <MudRadioGroup @bind-SelectedOption="model.Platform">
-                        <MudRadio Option="@("Windows")">Windows</MudRadio>
-                        <MudRadio Option="@("Android")">Android</MudRadio>
-                        <MudRadio Option="@("iOS")">iOS</MudRadio>
-                    </MudRadioGroup>
-                </div>
+                    <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
+                        <MudText Class="mr-4">平台</MudText>
+                        <MudRadioGroup @bind-SelectedOption="_model.Platform" T="PlatformEnum">
+                            <MudRadio Color="Color.Info" Option="@(PlatformEnum.Windows)">Windows</MudRadio>
+                            <MudRadio Color="Color.Info" Option="@(PlatformEnum.Android)">Android</MudRadio>
+                            <MudRadio Color="Color.Info" Option="@(PlatformEnum.IOS)">iOS</MudRadio>
+                        </MudRadioGroup>
+                    </div>
 
-                <MudTextField T="string" Label="版本" Variant="Variant.Outlined" Required="true" RequiredError="版本号不能为空" HelperText="格式：1.2.3.4" />
+                    <MudTextField T="string"
+                              Label="版本"
+                              @bind-Value="_model.VersionName"
+                              Variant="Variant.Outlined"
+                              Required="true"
+                              RequiredError="版本号不能为空"
+                              HelperText="格式：1.2.3.4" />
 
-                <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
-                    <MudText Class="mr-4">最小运行版本</MudText>
-                    <MudChipSet @bind-SelectedChip="Selected" Filter="true" Mandatory="true">
-                        <MudChip Text="grey">是</MudChip>
-                        <MudChip Text="grey">否</MudChip>
-                    </MudChipSet>
-                </div>
+                    <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
+                        <MudText Class="mr-4">最小运行版本</MudText>
+                        <MudRadioGroup @bind-SelectedOption="_model.IsMinVersion" T="bool">
+                            <MudRadio Color="Color.Info" Option="@(true)">是</MudRadio>
+                            <MudRadio Color="Color.Info" Option="@(false)">否</MudRadio>
+                        </MudRadioGroup>
+                    </div>
 
-                <MudTextField T="string" Label="更新日志" Variant="Variant.Outlined" Text="" Lines="5" />
+                    <MudTextField T="string" @bind-Value="_model.Log" Label="更新日志" Variant="Variant.Outlined" Text="" Lines="5" />
 
-                <MudTextField T="string" Label="文件" Required="true" Variant="Variant.Outlined" RequiredError="用户名不能为空" />
-                <MudFileUpload T="IBrowserFile">
-                    <ButtonTemplate>
-                        <MudButton HtmlTag="label"
+                    <MudTextField Class="mt-3"
+                              T="string"
+                              Label="文件"
+                              @bind-Value="_model.FileName"
+                              Variant="Variant.Outlined"
+                              ReadOnly="true"
+                              Required="true"
+                              RequiredError="文件不能为空" />
+                    <MudFileUpload T="IBrowserFile" @bind-Files="_model.File" OnFilesChanged="UploadFiles">
+                        <ButtonTemplate>
+                            <MudButton HtmlTag="label"
                                    Variant="Variant.Filled"
+                                   Color="Color.Info"
                                    StartIcon="@Icons.Material.Filled.CloudUpload"
                                    for="@context">
-                            上传文件
-                        </MudButton>
-                    </ButtonTemplate>
-                </MudFileUpload>
+                                选择文件
+                            </MudButton>
+                        </ButtonTemplate>
+                    </MudFileUpload>
+                    <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
+                        <MudText Class="mr-4">计算签名</MudText>
+                        <MudRadioGroup @bind-SelectedOption="_model.SignType" T="SignTypeEnum">
+                            <MudRadio Color="Color.Info" Option="@(SignTypeEnum.MD5)">MD5</MudRadio>
+                            <MudRadio Color="Color.Info" Option="@(SignTypeEnum.SHA1)">SHA1</MudRadio>
+                        </MudRadioGroup>
+                    </div>
 
-                <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
-                    <MudText Class="mr-4">计算签名</MudText>
-                    <MudChipSet @bind-SelectedChip="Selected" Filter="true" Mandatory="true">
-                        <MudChip Text="grey">MD5</MudChip>
-                        <MudChip Text="grey">SHA1</MudChip>
-                    </MudChipSet>
-                </div>
-
-                <MudTextField T="string" Label="密码"
+                    <MudTextField T="string" Label="密码"
+                              @bind-Value="_model.Password"
                               InputType="InputType.Password"
                               Variant="Variant.Outlined"
                               Required="true"
-                              RequiredError="Password is required!" />
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success)" Class="mt-5">发布</MudButton>
-            </MudForm>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
+                              RequiredError="密码不能为空" />
+                    <MudButton Class="mt-5"
+                           Variant="Variant.Filled"
+                           EndIcon="@Icons.Material.Filled.Send"
+                           Color="Color.Info"
+                           OnClick="@(async () => await Publish())">发布</MudButton>
+                </MudForm>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
 @code {
-    bool success;
-    MudChip Selected;
-    public string SelectedOption { get; set; }
-    private AppPublishModel model = new();
+    private MudForm _form;
+    private Dictionary<string, string>? _apps;
+    private readonly AppPublishModel _model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetApps();
+    }
+
+    private async Task GetApps()
+    {
+        var response = await HttpClientFactory.CreateClient("WebAPI").GetStringAsync($"app/app-name-list");
+        var result = JsonSerializer.Deserialize<ApiResult<Dictionary<string, string>>>(response);
+        if (result == null || result.Code != 0)
+        {
+            return;
+        }
+        _apps = result.Data;
+    }
+
+    private void UploadFiles(InputFileChangeEventArgs e)
+    {
+        _model.FileName = e.File.Name;
+    }
+
+    private async Task Publish()
+    {
+        await _form.Validate();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+    }
+
 }
