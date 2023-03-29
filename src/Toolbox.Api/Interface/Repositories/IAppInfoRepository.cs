@@ -1,7 +1,7 @@
 ﻿using Toolbox.Api.Entities;
 using Toolbox.Api.Enums;
 
-namespace Toolbox.Api.Interface;
+namespace Toolbox.Api.Interface.Repositories;
 public interface IAppInfoRepository
 {
     public Task<List<AppInfo>> GetAllAsync();

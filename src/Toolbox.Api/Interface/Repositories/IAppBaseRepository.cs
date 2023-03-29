@@ -1,6 +1,6 @@
 ﻿using Toolbox.Api.Entities;
 
-namespace Toolbox.Api.Interface;
+namespace Toolbox.Api.Interface.Repositories;
 public interface IAppBaseRepository
 {
     public Task<bool> ExistAsync(string appKey);

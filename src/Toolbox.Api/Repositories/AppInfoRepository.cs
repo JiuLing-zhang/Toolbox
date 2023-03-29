@@ -2,7 +2,7 @@
 using Toolbox.Api.DbContext;
 using Toolbox.Api.Entities;
 using Toolbox.Api.Enums;
-using Toolbox.Api.Interface;
+using Toolbox.Api.Interface.Repositories;
 
 namespace Toolbox.Api.Repositories;
 internal class AppInfoRepository : IAppInfoRepository
