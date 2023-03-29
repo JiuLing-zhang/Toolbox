@@ -20,7 +20,7 @@ public class AppVersionInfoResponse
     public string VersionName { get; set; } = null!;
     public DateTime CreateTime { get; set; }
     public string PublishTime => CreateTime.ToString("yyyy-MM-dd");
-    public string DownloadId { get; set; } = null!;
+    public string DownloadPath { get; set; } = null!;
     public SignTypeEnum SignType { get; set; }
     public string SignValue { get; set; } = null!;
     public int FileLength { get; set; }

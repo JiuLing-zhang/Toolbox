@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Web;
+﻿using System.Web;
 using JiuLing.CommonLibs.ExtensionMethods;
 using Microsoft.AspNetCore.Mvc;
 using Toolbox.Api.Enums;
@@ -14,16 +13,12 @@ namespace Toolbox.Api.Controllers;
 [ApiController]
 public class AppController : ControllerBase
 {
-    private readonly IAppShowService _appShowService;
     private readonly IHostEnvironment _hostEnvironment;
-    private readonly IAppInfoService _appInfoService;
     private readonly IAppService _appService;
     private readonly IDatabaseConfigService _databaseConfigService;
-    public AppController(IAppShowService appShowService, IHostEnvironment hostEnvironment, IAppInfoService appInfoService, IAppService appService, IDatabaseConfigService databaseConfigService)
+    public AppController(IHostEnvironment hostEnvironment, IAppService appService, IDatabaseConfigService databaseConfigService)
     {
-        _appShowService = appShowService;
         _hostEnvironment = hostEnvironment;
-        _appInfoService = appInfoService;
         _appService = appService;
         _databaseConfigService = databaseConfigService;
     }
@@ -31,7 +26,7 @@ public class AppController : ControllerBase
     [HttpGet("app-name-list")]
     public async Task<IActionResult> GetAppNamesAsync()
     {
-        var apps = await _appShowService.GetAppNamesAsync();
+        var apps = await _appService.GetAppNamesAsync();
         return Ok(new ApiResponse<Dictionary<string, string>>(0, "操作成功", apps));
     }
 
@@ -118,33 +113,14 @@ public class AppController : ControllerBase
     [HttpGet("app-list")]
     public async Task<IActionResult> GetAppsAsync()
     {
-        var apps = await _appShowService.GetAppsAsync();
+        var apps = await _appService.GetAppsAsync();
         return Ok(new ApiResponse<List<AppInfoResponse>>(0, "操作成功", apps));
     }
 
     [HttpGet("component-list")]
     public async Task<IActionResult> GetComponentsAsync()
     {
-        var components = await _appShowService.GetComponentsAsync();
+        var components = await _appService.GetComponentsAsync();
         return Ok(new ApiResponse<List<ComponentInfoResponse>>(0, "操作成功", components));
-    }
-
-
-    [HttpGet("download/{id}")]
-    public async Task<IActionResult> Download(string id)
-    {
-        var (filePath, contentType) = await _appInfoService.GetDownloadInfoAsync(id);
-        if (filePath.IsEmpty())
-        {
-            return NotFound("文件信息错误");
-        }
-        var tempPath = HttpUtility.UrlDecode(filePath).Replace("/", "\\");
-        string fileRealPath = Path.Combine(_hostEnvironment.ContentRootPath, tempPath);
-        if (!System.IO.File.Exists(fileRealPath))
-        {
-            return NotFound("文件不存在");
-        }
-        var stream = System.IO.File.OpenRead(fileRealPath);
-        return File(stream, contentType, Path.GetFileName(tempPath));
     }
 }

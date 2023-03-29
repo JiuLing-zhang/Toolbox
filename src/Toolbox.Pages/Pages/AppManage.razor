@@ -71,7 +71,7 @@
                                     <MudText Typo="Typo.subtitle2">平台:</MudText>
                                     <MudImage Class="ml-3" Src="@($"_content/Toolbox.Pages/images/{icon}.png")" Width="15" Height="15"></MudImage>
                                     <MudText Class="ml-1" Typo="Typo.subtitle2">@version.PlatformType</MudText>
-                                    <MudLink Class="ml-2" Href="@($"{Configuration["WebAPIHost"]}/app/download/{version.DownloadId}")" Underline="Underline.None">下载</MudLink>
+                                    <MudLink Class="ml-2" Href="@($"{Configuration["WebAPIHost"]}/{version.DownloadPath}")" Underline="Underline.None">下载</MudLink>
                                 </MudItem>
 
                                 <MudItem Class="d-flex align-center" xs="12" md="5">

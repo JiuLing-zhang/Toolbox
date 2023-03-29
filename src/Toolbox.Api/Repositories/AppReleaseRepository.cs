@@ -23,4 +23,9 @@ public class AppReleaseRepository : IAppReleaseRepository
         _dbContext.AppRelease.Add(appInfo);
         return await _dbContext.SaveChangesAsync();
     }
+
+    public async Task<List<AppRelease>> GetAllAsync()
+    {
+        return await _dbContext.AppRelease.Where(x => x.IsEnabled).ToListAsync();
+    }
 }

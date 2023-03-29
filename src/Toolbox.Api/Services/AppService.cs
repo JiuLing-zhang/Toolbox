@@ -12,10 +12,17 @@ public class AppService : IAppService
 {
     private readonly IAppBaseRepository _appBaseRepository;
     private readonly IAppReleaseRepository _appReleaseRepository;
-    public AppService(IAppReleaseRepository appReleaseRepository, IAppBaseRepository appBaseRepository)
+    private readonly IComponentRepository _componentRepository;
+    public AppService(IAppReleaseRepository appReleaseRepository, IAppBaseRepository appBaseRepository, IComponentRepository componentRepository)
     {
         _appReleaseRepository = appReleaseRepository;
         _appBaseRepository = appBaseRepository;
+        _componentRepository = componentRepository;
+    }
+    public async Task<Dictionary<string, string>> GetAppNamesAsync()
+    {
+        var appBaseList = await _appBaseRepository.GetAllAsync();
+        return appBaseList.ToDictionary(x => x.AppKey, x => x.AppName);
     }
 
     public async Task<bool> AllowPublishAsync(string appKey, PlatformEnum platform, string versionName)
@@ -72,14 +79,94 @@ public class AppService : IAppService
         var count = await _appReleaseRepository.AddAsync(appRelease);
         return count > 0;
     }
-    public Task<List<AppInfoResponse>> GetAppsAsync()
+    public async Task<List<AppInfoResponse>> GetAppsAsync()
     {
-        throw new NotImplementedException();
+        var result = new List<AppInfoResponse>();
+
+        var appBaseList = await _appBaseRepository.GetAllAsync();
+        var appInfoList = await _appReleaseRepository.GetAllAsync();
+        foreach (var appBase in appBaseList)
+        {
+            var resultItem = new AppInfoResponse()
+            {
+                AppName = appBase.AppName,
+                Icon = appBase.Icon,
+                Description = appBase.Description,
+                DownloadCount = appBase.DownloadCount,
+                GitHub = appBase.GitHub
+            };
+
+            if (!appBase.IsShow)
+            {
+                result.Add(resultItem);
+                continue;
+            }
+
+            string appKey = appBase.AppKey;
+
+            IEnumerable<AppRelease> appVersions = appInfoList.Where(x => x.AppKey == appKey).ToList();
+
+            List<AppVersionInfoResponse> versions = new List<AppVersionInfoResponse>();
+            BuildAppInfo(appVersions, PlatformEnum.Windows, out var windowsVersion);
+            if (windowsVersion != null)
+            {
+                versions.Add(windowsVersion);
+            }
+
+            BuildAppInfo(appVersions, PlatformEnum.Android, out var androidVersion);
+            if (androidVersion != null)
+            {
+                versions.Add(androidVersion);
+            }
+
+            BuildAppInfo(appVersions, PlatformEnum.iOS, out var iosVersion);
+            if (iosVersion != null)
+            {
+                versions.Add(iosVersion);
+            }
+
+            if (versions.Count > 0)
+            {
+                resultItem.Versions = versions;
+            }
+
+            result.Add(resultItem);
+        }
+
+        return result;
     }
 
-    public Task<List<ComponentInfoResponse>> GetComponentsAsync()
+    private void BuildAppInfo(IEnumerable<AppRelease> apps, PlatformEnum platform, out AppVersionInfoResponse? versions)
     {
-        throw new NotImplementedException();
+        var platformInfo = apps.Where(x => x.Platform == platform.ToString()).MaxBy(x => x.CreateTime);
+        if (platformInfo == null)
+        {
+            versions = null;
+            return;
+        }
+
+        versions = new AppVersionInfoResponse()
+        {
+            CreateTime = platformInfo.CreateTime,
+            DownloadPath = platformInfo.FilePath,
+            PlatformType = platform,
+            VersionName = platformInfo.VersionName,
+            SignType = (SignTypeEnum)Enum.Parse(typeof(SignTypeEnum), platformInfo.SignType),
+            SignValue = platformInfo.SignValue,
+            FileLength = platformInfo.FileLength,
+        };
+    }
+
+    public async Task<List<ComponentInfoResponse>> GetComponentsAsync()
+    {
+        var components = await _componentRepository.GetAllAsync();
+        return components.Select(x => new ComponentInfoResponse
+        {
+            Name = x.Name,
+            Icon = x.Icon,
+            Description = x.Description,
+            GitHub = x.GitHub,
+        }).ToList();
     }
 
     public Task<(string FilePath, string ContentType)> GetDownloadInfoAsync(string id)

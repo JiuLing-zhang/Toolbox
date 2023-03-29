@@ -48,10 +48,6 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
 builder.Services.AddTransient<IDatabaseConfigService, DatabaseConfigService>();
 builder.Services.AddTransient<IAppService, AppService>();
-builder.Services.AddTransient<IAppPublishService, AppPublishService>();
-builder.Services.AddTransient<IAppShowService, AppShowService>();
-builder.Services.AddTransient<IAppInfoService, AppInfoService>();
-
 builder.Services.AddTransient<IAppReleaseRepository, AppReleaseRepository>();
 builder.Services.AddTransient<IConfigBaseRepository, ConfigBaseRepository>();
 builder.Services.AddTransient<IAppInfoRepository, AppInfoRepository>();

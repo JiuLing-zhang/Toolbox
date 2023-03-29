@@ -5,6 +5,7 @@ using Toolbox.Api.Models.Response;
 namespace Toolbox.Api.Interface.Services;
 public interface IAppService
 {
+    Task<Dictionary<string, string>> GetAppNamesAsync();
     Task<bool> AllowPublishAsync(string appKey, PlatformEnum platform, string versionName);
     Task<bool> PublishAsync(AppReleaseModel model);
     Task<List<AppInfoResponse>> GetAppsAsync();
