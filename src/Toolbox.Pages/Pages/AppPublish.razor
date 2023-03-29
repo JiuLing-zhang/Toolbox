@@ -4,6 +4,7 @@
 @using Toolbox.Pages.Enums
 @using Toolbox.Pages.Models
 @using System.Text
+@using JiuLing.CommonLibs.ExtensionMethods
 
 @inject IHttpClientFactory HttpClientFactory;
 @inject IConfiguration Configuration
@@ -23,7 +24,18 @@
 }
 else
 {
+    if (_isSuccess)
+    {
+        <MudAlert Severity="Severity.Success">发布成功</MudAlert>
+    }
+    if (_errorMessage.IsNotEmpty())
+    {
+        <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+    }
     <MudGrid Class="mt-5 mb-5">
+        <MudOverlay Visible="_isPublishing" DarkBackground="true" Absolute="true">
+            <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+        </MudOverlay>
         <MudItem xs="12" md="12">
             <MudPaper Class="pa-4">
                 <div class="d-flex mb-3">
@@ -104,10 +116,12 @@ else
                               Required="true"
                               RequiredError="密码不能为空" />
                     <MudButton Class="mt-5"
+                           Disabled="_isSuccess"
                            Variant="Variant.Filled"
                            EndIcon="@Icons.Material.Filled.Send"
                            Color="Color.Info"
                            OnClick="@(async () => await Publish())">发布</MudButton>
+
                 </MudForm>
             </MudPaper>
         </MudItem>
@@ -115,10 +129,13 @@ else
 }
 
 @code {
-    private MudForm _form;
+    private MudForm _form = null!;
     private Dictionary<string, string>? _apps;
     private readonly AppPublishModel _model = new();
-    private IBrowserFile _file;
+    private IBrowserFile _file = null!;
+    private bool _isPublishing = false;
+    private string _errorMessage = "";
+    private bool _isSuccess = false;
     protected override async Task OnInitializedAsync()
     {
         await GetApps();
@@ -142,28 +159,33 @@ else
 
     private async Task Publish()
     {
+        _isSuccess = false;
+        _errorMessage = "";
         await _form.Validate();
         if (!_form.IsValid)
         {
             return;
         }
-
+        _isPublishing = true;
         var formData = new MultipartFormDataContent();
         formData.Add(new StringContent(_model.AppKey), nameof(_model.AppKey));
         formData.Add(new StringContent(Convert.ToInt32(_model.Platform).ToString()), nameof(_model.Platform));
         formData.Add(new StringContent(_model.VersionName), nameof(_model.VersionName));
         formData.Add(new StringContent(_model.IsMinVersion.ToString()), nameof(_model.IsMinVersion));
-        formData.Add(new StringContent(_model.Log), nameof(_model.Log));
+        formData.Add(new StringContent(_model.Log ?? ""), nameof(_model.Log));
         formData.Add(new StringContent(Convert.ToInt32(_model.SignType).ToString()), nameof(_model.SignType));
         formData.Add(new StringContent(_model.Password), nameof(_model.Password));
         formData.Add(new StreamContent(_file.OpenReadStream()), "file", _model.FileName);
 
         var response = await HttpClientFactory.CreateClient("WebAPI").PostAsync("app/publish", formData);
         var json = await response.Content.ReadAsStringAsync();
+        _isPublishing = false;
         var result = JsonSerializer.Deserialize<ApiResult>(json);
         if (result == null || result.Code != 0)
         {
+            _errorMessage = result?.Message ?? "未知错误";
             return;
         }
+        _isSuccess = true;
     }
 }
