@@ -74,6 +74,10 @@ builder.Services.AddCors(setup =>
     setup.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
+builder.Services.Configure<IISServerOptions>(options =>
+{
+    options.MaxRequestBodySize = 100000000;
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

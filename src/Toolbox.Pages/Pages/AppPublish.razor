@@ -167,6 +167,7 @@ else
             return;
         }
         _isPublishing = true;
+        long maxFileSize = Convert.ToInt64(Configuration["PublishMaxFileSize"]);
         var formData = new MultipartFormDataContent();
         formData.Add(new StringContent(_model.AppKey), nameof(_model.AppKey));
         formData.Add(new StringContent(Convert.ToInt32(_model.Platform).ToString()), nameof(_model.Platform));
@@ -175,7 +176,7 @@ else
         formData.Add(new StringContent(_model.Log ?? ""), nameof(_model.Log));
         formData.Add(new StringContent(Convert.ToInt32(_model.SignType).ToString()), nameof(_model.SignType));
         formData.Add(new StringContent(_model.Password), nameof(_model.Password));
-        formData.Add(new StreamContent(_file.OpenReadStream()), "file", _model.FileName);
+        formData.Add(new StreamContent(_file.OpenReadStream(maxFileSize)), "file", _model.FileName);
 
         var response = await HttpClientFactory.CreateClient("WebAPI").PostAsync("app/publish", formData);
         var json = await response.Content.ReadAsStringAsync();
