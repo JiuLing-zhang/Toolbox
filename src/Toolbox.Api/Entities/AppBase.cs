@@ -23,4 +23,6 @@ public class AppBase
     /// </summary>
     public string Icon { get; set; } = null!;
     public bool IsShow { get; set; }
+
+    public string AppKey2 { get; set; } = null!;
 }

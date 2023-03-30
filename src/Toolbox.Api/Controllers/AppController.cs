@@ -1,6 +1,8 @@
 ﻿using System.Web;
 using JiuLing.CommonLibs.ExtensionMethods;
+using JiuLing.CommonLibs.Model;
 using Microsoft.AspNetCore.Mvc;
+using Toolbox.Api.Entities;
 using Toolbox.Api.Enums;
 using Toolbox.Api.Interface;
 using Toolbox.Api.Interface.Services;
@@ -31,7 +33,7 @@ public class AppController : ControllerBase
     }
 
     [HttpPost("publish")]
-    public async Task<IActionResult> Publish([FromForm] AppPublishRequest request)
+    public async Task<IActionResult> PublishAsync([FromForm] AppPublishRequest request)
     {
 
         if (Request.Form.Files.Count != 1)
@@ -61,7 +63,7 @@ public class AppController : ControllerBase
         }
 
         var random = JiuLing.CommonLibs.RandomUtils.GetOneByLength(4);
-        var fileName = $"{request.AppKey}-{request.Platform}-{request.VersionName}-{random}".ToLower();
+        var fileName = $"{request.AppKey}_{request.Platform}_{request.VersionName}_{random}".ToLower();
 
         var fileExtension = Path.GetExtension(Path.GetFileName(file.FileName));
         fileName = $"{fileName}{fileExtension}";
@@ -122,5 +124,37 @@ public class AppController : ControllerBase
     {
         var components = await _appService.GetComponentsAsync();
         return Ok(new ApiResponse<List<ComponentInfoResponse>>(0, "操作成功", components));
+    }
+
+    [HttpGet("check-update/{key}/{platform}")]
+    public async Task<IActionResult> CheckUpdateAsync(string key, PlatformEnum platform)
+    {
+        var appKey = await _appService.GetAppKeyFromCheckUpdateKeyAsync(key);
+        if (appKey.IsEmpty())
+        {
+            return Ok(new ApiResponse(1, "无可用更新"));
+        }
+        var appRelease = await _appService.GetAppReleaseInfoAsync(appKey, platform);
+        if (appRelease == null)
+        {
+            return Ok(new ApiResponse(1, "无可用更新"));
+        }
+
+        string downloadUrl = $"{this.Request.Scheme}://{this.Request.Host}{this.Request.PathBase}/{appRelease.FilePath}";
+        var upgradeInfo = new AppUpgradeInfo
+        {
+            Name = appRelease.AppKey,
+            VersionCode = appRelease.VersionCode,
+            Version = appRelease.VersionName,
+            MinVersion = appRelease.MinVersionName,
+            FileLength = appRelease.FileLength,
+            DownloadUrl = downloadUrl,
+            CreateTime = appRelease.CreateTime,
+            Log = appRelease.UpgradeLog ?? "",
+            SignType = appRelease.SignType ?? "",
+            SignValue = appRelease.SignValue ?? ""
+        };
+
+        return Ok(new ApiResponse<AppUpgradeInfo>(0, "", upgradeInfo));
     }
 }

@@ -168,9 +168,36 @@ public class AppService : IAppService
         }).ToList();
     }
 
-    public Task<(string FilePath, string ContentType)> GetDownloadInfoAsync(string id)
+    public async Task<string> GetAppKeyFromCheckUpdateKeyAsync(string checkUpdateKey)
     {
-        throw new NotImplementedException();
+        return await _appBaseRepository.GetAppKeyFromCheckUpdateKeyAsync(checkUpdateKey);
     }
 
+    public async Task<AppReleaseResponse?> GetAppReleaseInfoAsync(string appKey, PlatformEnum platform)
+    {
+        var appRelease = await _appReleaseRepository.GetLastVersionAsync(appKey, platform);
+        if (appRelease == null)
+        {
+            return default;
+        }
+        return new AppReleaseResponse()
+        {
+            AppKey = appKey,
+            CreateTime = appRelease.CreateTime,
+            FileLength = appRelease.FileLength,
+            FilePath = appRelease.FilePath,
+            MinVersionName = appRelease.MinVersionName,
+            Platform = appRelease.Platform,
+            SignType = appRelease.SignType,
+            SignValue = appRelease.SignValue,
+            UpgradeLog = appRelease.UpgradeLog,
+            VersionCode = appRelease.VersionCode,
+            VersionName = appRelease.VersionName
+        };
+    }
+
+    public async Task DownloadOnceAsync(string appKey)
+    {
+        await _appBaseRepository.DownloadOnceAsync(appKey);
+    }
 }

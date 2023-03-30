@@ -56,4 +56,14 @@ internal class AppBaseRepository : IAppBaseRepository
         var count = await _dbContext.AppBase.CountAsync(x => x.AppKey == appKey);
         return count > 0;
     }
+
+    public async Task<string> GetAppKeyFromCheckUpdateKeyAsync(string checkUpdateKey)
+    {
+        var appBase = await _dbContext.AppBase.FirstOrDefaultAsync(x => x.AppKey2 == checkUpdateKey);
+        if (appBase == null)
+        {
+            return "";
+        }
+        return appBase.AppKey;
+    }
 }

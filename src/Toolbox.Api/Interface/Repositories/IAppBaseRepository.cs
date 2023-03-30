@@ -13,4 +13,6 @@ public interface IAppBaseRepository
     public Task<int> DeleteAsync(int id);
 
     public Task DownloadOnceAsync(string appKey);
+
+    public Task<string> GetAppKeyFromCheckUpdateKeyAsync(string checkUpdateKey);
 }

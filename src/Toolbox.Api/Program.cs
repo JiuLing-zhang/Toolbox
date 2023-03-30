@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using Toolbox.Api.Models;
+using Toolbox.Api.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -88,7 +89,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ErrorHandlerMiddleware>();
-
+app.UseMiddleware<AppDownloadMiddleware>();
 app.UseHttpsRedirection();
 
 app.UseAuthorization();

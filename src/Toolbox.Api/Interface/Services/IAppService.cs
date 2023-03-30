@@ -10,5 +10,7 @@ public interface IAppService
     Task<bool> PublishAsync(AppReleaseModel model);
     Task<List<AppInfoResponse>> GetAppsAsync();
     Task<List<ComponentInfoResponse>> GetComponentsAsync();
-    Task<(string FilePath, string ContentType)> GetDownloadInfoAsync(string id);
+    Task<string> GetAppKeyFromCheckUpdateKeyAsync(string checkUpdateKey);
+    Task<AppReleaseResponse?> GetAppReleaseInfoAsync(string appKey, PlatformEnum platform);
+    Task DownloadOnceAsync(string appKey);
 }
