@@ -155,6 +155,6 @@ public class AppController : ControllerBase
             SignValue = appRelease.SignValue ?? ""
         };
 
-        return Ok(new ApiResponse<AppUpgradeInfo>(0, "", upgradeInfo));
+        return Ok(upgradeInfo);
     }
 }
