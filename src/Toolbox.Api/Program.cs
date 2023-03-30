@@ -97,9 +97,14 @@ app.UseAuthorization();
 var fectProvider = new FileExtensionContentTypeProvider();
 fectProvider.Mappings.Add(".apk", "application/vnd.android.package-archive");
 
+var appFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", GlobalConfig.AppFolder);
+if (!Directory.Exists(appFolderPath))
+{
+    Directory.CreateDirectory(appFolderPath);
+}
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", GlobalConfig.AppFolder)),
+    FileProvider = new PhysicalFileProvider(appFolderPath),
     RequestPath = "/" + GlobalConfig.AppFolder,
     ContentTypeProvider = fectProvider
 });
