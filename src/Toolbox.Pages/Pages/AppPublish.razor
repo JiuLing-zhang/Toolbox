@@ -5,9 +5,11 @@
 @using Toolbox.Pages.Models
 @using System.Text
 @using JiuLing.CommonLibs.ExtensionMethods
+@using Toolbox.Pages.Shared.Dialogs
 
 @inject IHttpClientFactory HttpClientFactory;
 @inject IConfiguration Configuration
+@inject IDialogService Dialog
 
 <PageTitle>码术 - 开源工具</PageTitle>
 
@@ -24,14 +26,6 @@
 }
 else
 {
-    if (_isSuccess)
-    {
-        <MudAlert Severity="Severity.Success">发布成功</MudAlert>
-    }
-    if (_errorMessage.IsNotEmpty())
-    {
-        <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
-    }
     <MudGrid Class="mt-5 mb-5">
         <MudOverlay Visible="_isPublishing" DarkBackground="true" Absolute="true">
             <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
@@ -134,7 +128,6 @@ else
     private readonly AppPublishModel _model = new();
     private IBrowserFile _file = null!;
     private bool _isPublishing = false;
-    private string _errorMessage = "";
     private bool _isSuccess = false;
     protected override async Task OnInitializedAsync()
     {
@@ -154,13 +147,25 @@ else
 
     private void UploadFiles(InputFileChangeEventArgs e)
     {
+        long maxFileSize = Convert.ToInt64(Configuration["PublishMaxFileSize"]);
+        if (e.GetMultipleFiles()[0].Size >= maxFileSize)
+        {
+            var options = new DialogOptions()
+                {
+                    NoHeader = true
+                };
+            var parameters = new DialogParameters();
+            parameters.Add("ContentText", "文件大小超过系统限制");
+            Dialog.Show<DialogOk>("提示", parameters, options);
+            _model.FileName = "";
+            return;
+        }
+
         _model.FileName = e.File.Name;
     }
 
     private async Task Publish()
     {
-        _isSuccess = false;
-        _errorMessage = "";
         await _form.Validate();
         if (!_form.IsValid)
         {
@@ -182,11 +187,13 @@ else
         var json = await response.Content.ReadAsStringAsync();
         _isPublishing = false;
         var result = JsonSerializer.Deserialize<ApiResult>(json);
-        if (result == null || result.Code != 0)
+
+        if (result != null && result.Code == 0)
         {
-            _errorMessage = result?.Message ?? "未知错误";
-            return;
-        }
-        _isSuccess = true;
+            _isSuccess = true;
+        } 
+        var parameters = new DialogParameters();
+        parameters.Add("ContentText", result?.Message ?? "未知错误");
+        await Dialog.ShowAsync<DialogOk>("提示", parameters);
     }
 }
