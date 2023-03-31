@@ -1,6 +1,8 @@
 ﻿@page "/chat"
 
 @using JiuLing.CommonLibs.ExtensionMethods;
+@using System.Text.Json;
+@using System.Text;
 @using Toolbox.Pages.Models
 
 @inject IHttpClientFactory HttpClientFactory;
@@ -57,11 +59,32 @@
 
             @if (history.Answer.IsEmpty())
             {
-                <MudProgressLinear Color="Color.Secondary"
+                if (_sbAnswerStream.Length == 0)
+                {
+                    <MudProgressLinear Color="Color.Secondary"
                            Striped="true"
                            Size="Size.Large"
                            Value="100"
                            Class="my-7" />
+                }
+                else
+                {
+                    <div class="d-flex">
+                        <MudIcon Class="mr-2"
+                     Icon="@Icons.Material.Filled.SmartToy"
+                     Color="Color.Secondary"
+                     Size="Size.Small" />
+                        @if (_modelSelected.Text == "1")
+                        {
+                            <MudMarkdown Value="@_sbAnswerStream.ToString()" />
+                        }
+                        else
+                        {
+                            <MudText Class="ml-2" Typo="Typo.body1">@_sbAnswerStream.ToString()</MudText>
+                        }
+                    </div>
+                }
+
             }
             else
             {
@@ -113,6 +136,8 @@
     private List<QuestionAndAnswer> _histories = null!;
     private MudChip _modelSelected;
     private MudChip? _saveContextSelected;
+    private readonly StringBuilder _sbAnswerStream = new StringBuilder();
+    private volatile bool _isReadingStream = true;
 
     protected override Task OnInitializedAsync()
     {
@@ -126,7 +151,7 @@
         {
             return;
         }
-        InvokeAsync(RequestOpenAI);
+        InvokeAsync(RequestOpenAIStreaming);
     }
 
     private async void OnSaveContextChanged()
@@ -151,7 +176,7 @@
 
     private async void BeginChat()
     {
-        await RequestOpenAI();
+        await RequestOpenAIStreaming();
     }
     private async void RetryChat()
     {
@@ -162,7 +187,7 @@
         }
         _searchKey = question;
         _histories.Remove(_histories.Last());
-        await RequestOpenAI();
+        await RequestOpenAIStreaming();
     }
     private async Task RequestOpenAI()
     {
@@ -210,6 +235,91 @@
         {
             _histories.Last(x => x.Question == question).Answer = answer;
             _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RequestOpenAIStreaming()
+    {
+        if (_searchKey.IsEmpty())
+        {
+            return;
+        }
+        if (_isLoading)
+        {
+            return;
+        }
+        _isLoading = true;
+        _isShowRetry = false;
+
+        string question = _isSaveContext ? $"提问:{_searchKey}" : _searchKey;
+        _sbAnswerStream.Clear();
+        _searchKey = "";
+        string context = _isSaveContext ? string.Join("\n", _histories.Select(x => $"{x.Question}\n{x.Answer}")) : "";
+        _histories.Add(new QuestionAndAnswer(question, ""));
+        StateHasChanged();
+
+        try
+        {
+            string prompt = $"{context}{question}";
+            var postObj = new { prompt, ChatType = Convert.ToInt32(_modelSelected.Text) };
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"chatgpt/do-chat-streaming");
+            requestMessage.Content = new StringContent(JsonSerializer.Serialize(postObj), Encoding.UTF8, "application/json");
+            var response = await HttpClientFactory.CreateClient("WebAPI").SendAsync(requestMessage);
+            using (var stream = await response.Content.ReadAsStreamAsync())
+            {
+
+                using (var reader = new StreamReader(stream))
+                {
+                    Task.Run(() =>
+                    {
+                        while (_isReadingStream)
+                        {
+                            Thread.Sleep(300);
+                            StateHasChanged();
+                        }
+                    });
+                    while (true)
+                    {
+                        var currentLine = reader.ReadLine() ?? "";
+                        if (currentLine.StartsWith("error:"))
+                        {
+                            currentLine = currentLine.TrimStart(new char[] { 'e', 'r', 'r', 'o', 'r', ':' }).Trim();
+                            var errorInfo = currentLine.Split(':');
+                            var code = Convert.ToInt32(errorInfo[0]);
+                            if (code == 10)
+                            {
+                                _isShowRetry = true;
+                            }
+                            throw new Exception(errorInfo[1]);
+                        }
+                        if (!currentLine.StartsWith("data:"))
+                        {
+                            _sbAnswerStream.AppendLine();
+                            continue;
+                        }
+                        currentLine = currentLine.TrimStart(new char[] { 'd', 'a', 't', 'a', ':' });
+                        if (currentLine == "[DONE]")
+                        {
+                            return;
+                        }
+                        _sbAnswerStream.Append(currentLine);
+                        await Task.Delay(1);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _sbAnswerStream.AppendLine();
+            _sbAnswerStream.Append($"出错了：{ex.Message}");
+            _isShowRetry = true;
+        }
+        finally
+        {
+            _isReadingStream = false;
+            _isLoading = false;
+            _histories.Last(x => x.Question == question).Answer = _sbAnswerStream.ToString();
             StateHasChanged();
         }
     }

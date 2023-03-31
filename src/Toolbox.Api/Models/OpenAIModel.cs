@@ -8,11 +8,14 @@ internal class OpenAIModel
 
     [JsonPropertyName("messages")]
     public List<OpenAIMessage> Messages { get; set; }
+    [JsonPropertyName("stream")]
+    public bool Stream { get; set; }
 
-    public OpenAIModel(string model, List<OpenAIMessage> messages)
+    public OpenAIModel(string model, List<OpenAIMessage> messages, bool stream)
     {
         Model = model;
         Messages = messages;
+        Stream = stream;
     }
 }
 

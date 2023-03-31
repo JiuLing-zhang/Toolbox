@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using JiuLing.CommonLibs.ExtensionMethods;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Text;
 using System.Text.Json;
@@ -19,6 +20,74 @@ public class ChatGPTController : ControllerBase
         _appSettings = appSettingsOptions.Value;
     }
 
+    [HttpPost("do-chat-streaming")]
+    public async Task GetStreaming(ChatGPTRequest request)
+    {
+        var outputStream = this.Response.Body;
+        try
+        {
+            if (request.Prompt.Length > _appSettings.OpenAI.ContextMaxLength)
+            {
+                await outputStream.WriteAsync(Encoding.UTF8.GetBytes("error: 1:内容已超过最大长度限制"));
+                return;
+            }
+
+            var messages = new List<OpenAIMessage>();
+            messages.Add(new OpenAIMessage("user", request.Prompt));
+            if (request.ChatType == Enums.ChatTypeEnum.Coder)
+            {
+                messages.Add(new OpenAIMessage("system", "我是一个程序员，我专门负责代码相关工作。"));
+            }
+            var postObj = new OpenAIModel("gpt-3.5-turbo", messages, true);
+
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, OpenAIApi);
+            requestMessage.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _appSettings.OpenAI.ChatGPTApiKey);
+            requestMessage.Content = new StringContent(JsonSerializer.Serialize(postObj), Encoding.UTF8, "application/json");
+
+            var response = await _httpClientFactory.CreateClient("OpenAI").SendAsync(requestMessage);
+            using (var stream = await response.Content.ReadAsStreamAsync())
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    while (true)
+                    {
+                        var currentLine = $"{reader.ReadLine()}{reader.ReadLine()}";
+                        if (currentLine.IsEmpty())
+                        {
+                            continue;
+                        }
+                        if (!currentLine.StartsWith("data:"))
+                        {
+                            continue;
+                        }
+                        currentLine = currentLine.TrimStart(new char[] { 'd', 'a', 't', 'a', ':' }).Trim();
+                        if (currentLine == "[DONE]")
+                        {
+                            await outputStream.WriteAsync(Encoding.UTF8.GetBytes($"data:[DONE]{Environment.NewLine}"));
+                            await outputStream.FlushAsync();
+                            return;
+                        }
+                        var streamResult = JsonSerializer.Deserialize<OpenAIStreamResult>(currentLine);
+                        var data = streamResult?.Choices[0].Delta.Content;
+                        if (data == null)
+                        {
+                            continue;
+                        }
+                        string result = $"data:{data}{Environment.NewLine}";
+                        await outputStream.WriteAsync(Encoding.UTF8.GetBytes(result));
+                        await outputStream.FlushAsync();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await outputStream.WriteAsync(Encoding.UTF8.GetBytes("error: 10:服务器连接失败"));
+            await outputStream.FlushAsync();
+        }
+    }
+
+
     [HttpPost("do-chat")]
     public async Task<IActionResult> DoChat(ChatGPTRequest request)
     {
@@ -33,7 +102,7 @@ public class ChatGPTController : ControllerBase
         {
             messages.Add(new OpenAIMessage("system", "我是一个程序员，我专门负责代码相关工作。"));
         }
-        var postObj = new OpenAIModel("gpt-3.5-turbo", messages);
+        var postObj = new OpenAIModel("gpt-3.5-turbo", messages, false);
 
         var requestMessage = new HttpRequestMessage(HttpMethod.Post, OpenAIApi);
         requestMessage.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _appSettings.OpenAI.ChatGPTApiKey);
