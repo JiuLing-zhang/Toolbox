@@ -19,8 +19,7 @@
         @if (!PlatformSettings.IsApp)
         {
             <MudMenu Label="下载客户端"
-                 Variant="Variant.Filled"
-                 Color="Color.Dark"
+                 Color="Color.Inherit"
                  Dense="true"
                  AnchorOrigin="Origin.BottomCenter">
                 <MudMenuItem OnClick="@(()=>OnDownloadClick("6e13d0edd2d01d60aa476693600b147e"))">
@@ -33,8 +32,10 @@
                 </MudMenuItem>
             </MudMenu>
         }
-        <MudIcon Class="ml-5" Icon="@Icons.Material.Filled.TipsAndUpdates" />
-        <MudText Typo="Typo.subtitle1">人生苦短，用心写Bug</MudText>
+        <MudHidden Breakpoint="Breakpoint.Xs" Invert="false">
+            <MudIcon Class="ml-5" Icon="@Icons.Material.Filled.TipsAndUpdates" />
+            <MudText Typo="Typo.subtitle1">人生苦短，用心写Bug</MudText>
+        </MudHidden>
         <MudIconButton Class="ml-3" Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/JiuLing-zhang" Target="_blank" />
     </MudAppBar>
     <MudDrawer @bind-Open="@open" Elevation="1">
