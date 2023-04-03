@@ -28,7 +28,7 @@ public class ChatGPTController : ControllerBase
         {
             if (request.Prompt.Length > _appSettings.OpenAI.ContextMaxLength)
             {
-                await outputStream.WriteAsync(Encoding.UTF8.GetBytes("error: 1:内容已超过最大长度限制"));
+                await outputStream.WriteAsync(Encoding.UTF8.GetBytes("error:11:内容已超过最大长度限制"));
                 return;
             }
 
@@ -45,44 +45,52 @@ public class ChatGPTController : ControllerBase
             requestMessage.Content = new StringContent(JsonSerializer.Serialize(postObj), Encoding.UTF8, "application/json");
 
             var response = await _httpClientFactory.CreateClient("OpenAI").SendAsync(requestMessage);
-            using (var stream = await response.Content.ReadAsStreamAsync())
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(stream);
+
+            while (!reader.EndOfStream)
             {
-                using (var reader = new StreamReader(stream))
+                var currentLine = await reader.ReadLineAsync();
+                if (currentLine.IsEmpty())
                 {
-                    while (true)
-                    {
-                        var currentLine = $"{reader.ReadLine()}{reader.ReadLine()}";
-                        if (currentLine.IsEmpty())
-                        {
-                            continue;
-                        }
-                        if (!currentLine.StartsWith("data:"))
-                        {
-                            continue;
-                        }
-                        currentLine = currentLine.TrimStart(new char[] { 'd', 'a', 't', 'a', ':' }).Trim();
-                        if (currentLine == "[DONE]")
-                        {
-                            await outputStream.WriteAsync(Encoding.UTF8.GetBytes($"data:[DONE]{Environment.NewLine}"));
-                            await outputStream.FlushAsync();
-                            return;
-                        }
-                        var streamResult = JsonSerializer.Deserialize<OpenAIStreamResult>(currentLine);
-                        var data = streamResult?.Choices[0].Delta.Content;
-                        if (data == null)
-                        {
-                            continue;
-                        }
-                        string result = $"data:{data}{Environment.NewLine}";
-                        await outputStream.WriteAsync(Encoding.UTF8.GetBytes(result));
-                        await outputStream.FlushAsync();
-                    }
+                    continue;
                 }
+
+                if (currentLine.TrimStart().IndexOf("{") == 0)
+                {
+                    var json = $"{currentLine}{await reader.ReadToEndAsync()}";
+                    var error = JsonSerializer.Deserialize<OpenAIStreamErrorResult>(json);
+                    var errorString = error?.Error?.Message ?? json;
+                    await outputStream.WriteAsync(Encoding.UTF8.GetBytes($"error:10:{errorString}"));
+                    await outputStream.FlushAsync();
+                    return;
+                }
+
+                if (!currentLine.StartsWith("data:"))
+                {
+                    continue;
+                }
+                currentLine = currentLine.TrimStart(new char[] { 'd', 'a', 't', 'a', ':' }).Trim();
+                if (currentLine == "[DONE]")
+                {
+                    await outputStream.WriteAsync(Encoding.UTF8.GetBytes($"data:[DONE]{Environment.NewLine}"));
+                    await outputStream.FlushAsync();
+                    return;
+                }
+                var streamResult = JsonSerializer.Deserialize<OpenAIStreamResult>(currentLine);
+                var data = streamResult?.Choices[0].Delta.Content;
+                if (data == null)
+                {
+                    continue;
+                }
+                string result = $"data:{data}{Environment.NewLine}";
+                await outputStream.WriteAsync(Encoding.UTF8.GetBytes(result));
+                await outputStream.FlushAsync();
             }
         }
         catch (Exception ex)
         {
-            await outputStream.WriteAsync(Encoding.UTF8.GetBytes("error: 10:服务器连接失败"));
+            await outputStream.WriteAsync(Encoding.UTF8.GetBytes("error:10:服务器连接失败"));
             await outputStream.FlushAsync();
         }
     }

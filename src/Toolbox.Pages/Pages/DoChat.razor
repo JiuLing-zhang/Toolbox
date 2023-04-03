@@ -276,13 +276,11 @@
                         if (currentLine.StartsWith("error:"))
                         {
                             currentLine = currentLine.TrimStart(new char[] { 'e', 'r', 'r', 'o', 'r', ':' }).Trim();
-                            var errorInfo = currentLine.Split(':');
-                            var code = Convert.ToInt32(errorInfo[0]);
-                            if (code == 10)
+                            if (Convert.ToInt32(currentLine.Substring(0, 2)) == 10)
                             {
                                 _isShowRetry = true;
                             }
-                            throw new Exception(errorInfo[1]);
+                            throw new Exception(currentLine.Substring(3));
                         }
                         if (!currentLine.StartsWith("data:"))
                         {
