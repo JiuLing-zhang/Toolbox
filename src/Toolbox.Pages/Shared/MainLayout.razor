@@ -22,11 +22,11 @@
                  Color="Color.Inherit"
                  Dense="true"
                  AnchorOrigin="Origin.BottomCenter">
-                <MudMenuItem OnClick="@(()=>OnDownloadClick("6e13d0edd2d01d60aa476693600b147e"))">
+                <MudMenuItem OnClick="@(()=>OnDownloadClick("tool-box_windows_1.0.4.5_7841.msix"))">
                     <MudImage Class="mr-1" Src="@($"_content/Toolbox.Pages/images/windows.png")" Width="15" Height="15"></MudImage>
                     Windows 平台
                 </MudMenuItem>
-                <MudMenuItem OnClick="@(()=>OnDownloadClick("7f3678cc7d66c573b938d1a7d793fd94"))">
+                <MudMenuItem OnClick="@(()=>OnDownloadClick("tool-box_android_1.0.4.5_5677.apk"))">
                     <MudImage Class="mr-1" Src="@($"_content/Toolbox.Pages/images/android.png")" Width="15" Height="15"></MudImage>
                     Android 平台
                 </MudMenuItem>
@@ -59,14 +59,14 @@
         open = !open;
     }
 
-    private async void OnDownloadClick(string id)
+    private async void OnDownloadClick(string fileName)
     {
         var result = await DialogService.ShowMessageBox("警告", "当前版本未集成自动更新模块，确认要下载吗？", "下载", "取消");
         if (result == null || result == false)
         {
             return;
         }
-        var url = $"{Configuration["WebAPIHost"]}/app/download/{id}";
+        var url = $"{Configuration["WebAPIHost"]}/apps/{fileName}";
         NavigationManager.NavigateTo(url);
     }
 }

@@ -96,6 +96,7 @@ app.UseAuthorization();
 
 var fectProvider = new FileExtensionContentTypeProvider();
 fectProvider.Mappings.Add(".apk", "application/vnd.android.package-archive");
+fectProvider.Mappings.Add(".msix", "application/octet-stream");
 
 var appFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", GlobalConfig.AppFolder);
 if (!Directory.Exists(appFolderPath))
