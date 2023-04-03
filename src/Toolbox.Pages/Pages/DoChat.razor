@@ -268,18 +268,9 @@
             var response = await HttpClientFactory.CreateClient("WebAPI").SendAsync(requestMessage);
             using (var stream = await response.Content.ReadAsStreamAsync())
             {
-
                 using (var reader = new StreamReader(stream))
                 {
-                    Task.Run(() =>
-                    {
-                        while (_isReadingStream)
-                        {
-                            Thread.Sleep(300);
-                            StateHasChanged();
-                        }
-                    });
-                    while (true)
+                    while (!reader.EndOfStream)
                     {
                         var currentLine = reader.ReadLine() ?? "";
                         if (currentLine.StartsWith("error:"))
@@ -304,6 +295,7 @@
                             return;
                         }
                         _sbAnswerStream.Append(currentLine);
+                        StateHasChanged();
                         await Task.Delay(1);
                     }
                 }
