@@ -214,7 +214,14 @@
         try
         {
             string prompt = $"{context}{question}";
-            var postObj = new { prompt, ChatType = Convert.ToInt32(_modelSelected.Text) };
+            long timestamp = JiuLing.CommonLibs.Text.TimestampUtils.GetLen13();
+            var postObj = new
+            {
+                prompt,
+                chatType = Convert.ToInt32(_modelSelected.Text),
+                timestamp,
+                sign = JiuLing.CommonLibs.Security.MD5Utils.GetStringValueToLower($"{timestamp}{timestamp}{timestamp}")
+            };
             var response = await HttpClientFactory.CreateClient("WebAPI").PostAsJsonAsync($"chatgpt/do-chat", postObj);
             var result = await response.Content.ReadFromJsonAsync<ApiResult<string>>();
 
@@ -262,12 +269,17 @@
         _histories.Add(new QuestionAndAnswer(question, ""));
         StateHasChanged();
         var jsInProcess = (IJSInProcessRuntime)JSRuntime;
-        jsInProcess.InvokeVoid("ScrollToEnd", "message-end");
-       
         try
         {
             string prompt = $"{context}{question}";
-            var postObj = new { prompt, ChatType = Convert.ToInt32(_modelSelected.Text) };
+            long timestamp = JiuLing.CommonLibs.Text.TimestampUtils.GetLen13();
+            var postObj = new
+            {
+                prompt,
+                chatType = Convert.ToInt32(_modelSelected.Text),
+                timestamp,
+                sign = JiuLing.CommonLibs.Security.SHA1Utils.GetStringValueToLower($"{timestamp}{timestamp}{timestamp}")
+            };
             var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"chatgpt/do-chat-streaming");
             requestMessage.Content = new StringContent(JsonSerializer.Serialize(postObj), Encoding.UTF8, "application/json");
             var response = await HttpClientFactory.CreateClient("WebAPI").SendAsync(requestMessage);

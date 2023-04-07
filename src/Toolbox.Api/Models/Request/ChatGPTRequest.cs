@@ -2,7 +2,7 @@
 using Toolbox.Api.Enums;
 
 namespace Toolbox.Api.Models.Request;
-public class ChatGPTRequest
+public class ChatGPTRequest : SignRequest
 {
     [Required(ErrorMessage = "内容不能为空")]
     public string Prompt { get; set; } = null!;

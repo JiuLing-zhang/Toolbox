@@ -26,6 +26,13 @@ public class ChatGPTController : ControllerBase
         var outputStream = this.Response.Body;
         try
         {
+            var sign = JiuLing.CommonLibs.Security.SHA1Utils.GetStringValueToLower($"{request.Timestamp}{request.Timestamp}{request.Timestamp}");
+            if (sign != request.Sign)
+            {
+                await outputStream.WriteAsync(Encoding.UTF8.GetBytes("error:12:非法请求"));
+                return;
+            }
+
             if (request.Prompt.Length > _appSettings.OpenAI.ContextMaxLength)
             {
                 await outputStream.WriteAsync(Encoding.UTF8.GetBytes("error:11:内容已超过最大长度限制"));
@@ -99,6 +106,13 @@ public class ChatGPTController : ControllerBase
     [HttpPost("do-chat")]
     public async Task<IActionResult> DoChat(ChatGPTRequest request)
     {
+
+        var sign = JiuLing.CommonLibs.Security.SHA1Utils.GetStringValueToLower($"{request.Timestamp}{request.Timestamp}{request.Timestamp}");
+        if (sign != request.Sign)
+        {
+            return Ok(new ApiResponse(12, "非法请求"));
+        }
+
         if (request.Prompt.Length > _appSettings.OpenAI.ContextMaxLength)
         {
             return Ok(new ApiResponse(1, "内容已超过最大长度限制"));
