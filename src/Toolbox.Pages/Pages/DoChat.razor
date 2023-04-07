@@ -7,6 +7,7 @@
 
 @inject IHttpClientFactory HttpClientFactory;
 @inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>码术 - AI 聊天</PageTitle>
 <div class="chat-message">
@@ -115,6 +116,8 @@
 
         </MudPaper>
     }
+
+    <div id="message-end" style="height:0px; overflow:hidden"></div>
 </div>
 <div class="chat-tools">
     <MudTextField Label="想聊点什么呢？"
@@ -258,7 +261,9 @@
         string context = _isSaveContext ? string.Join("\n", _histories.Select(x => $"{x.Question}\n{x.Answer}")) : "";
         _histories.Add(new QuestionAndAnswer(question, ""));
         StateHasChanged();
-
+        var jsInProcess = (IJSInProcessRuntime)JSRuntime;
+        jsInProcess.InvokeVoid("ScrollToEnd", "message-end");
+       
         try
         {
             string prompt = $"{context}{question}";
@@ -294,6 +299,7 @@
                         }
                         _sbAnswerStream.Append(currentLine);
                         StateHasChanged();
+                        jsInProcess.InvokeVoid("ScrollToEnd", "message-end");
                         await Task.Delay(1);
                     }
                 }
@@ -311,6 +317,7 @@
             _isLoading = false;
             _histories.Last(x => x.Question == question).Answer = _sbAnswerStream.ToString();
             StateHasChanged();
+            jsInProcess.InvokeVoid("ScrollToEnd", "message-end");
         }
     }
 }

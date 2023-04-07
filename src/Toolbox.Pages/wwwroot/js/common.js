@@ -6,3 +6,7 @@ function copyToClipboard(text) {
     document.execCommand('copy');
     document.body.removeChild(textarea);
 }
+
+function ScrollToEnd(id) {
+    document.getElementById(id).scrollIntoView();
+}
