@@ -222,7 +222,7 @@
                 timestamp,
                 sign = JiuLing.CommonLibs.Security.MD5Utils.GetStringValueToLower($"{timestamp}{timestamp}{timestamp}")
             };
-            var response = await HttpClientFactory.CreateClient("WebAPI").PostAsJsonAsync($"chatgpt/do-chat", postObj);
+            var response = await HttpClientFactory.CreateClient("ChatAPI").PostAsJsonAsync($"chatgpt/do-chat", postObj);
             var result = await response.Content.ReadFromJsonAsync<ApiResult<string>>();
 
             if (result == null || result.Code != 0 || result.Data == null)
@@ -282,7 +282,7 @@
             };
             var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"chatgpt/do-chat-streaming");
             requestMessage.Content = new StringContent(JsonSerializer.Serialize(postObj), Encoding.UTF8, "application/json");
-            var response = await HttpClientFactory.CreateClient("WebAPI").SendAsync(requestMessage);
+            var response = await HttpClientFactory.CreateClient("ChatAPI").SendAsync(requestMessage);
             using (var stream = await response.Content.ReadAsStreamAsync())
             {
                 using (var reader = new StreamReader(stream))

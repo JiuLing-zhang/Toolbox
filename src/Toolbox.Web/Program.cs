@@ -16,6 +16,10 @@ builder.Services.AddHttpClient("WebAPI", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("WebAPIHost") ?? throw new ArgumentException());
 });
+builder.Services.AddHttpClient("ChatAPI", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("ChatAPIHost") ?? throw new ArgumentException());
+});
 
 builder.Services.AddMudServices();
 builder.Services.AddMudMarkdownServices();

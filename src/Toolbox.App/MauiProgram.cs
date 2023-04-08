@@ -32,6 +32,10 @@ namespace Toolbox.App
             {
                 client.BaseAddress = new Uri(sp.GetService<IConfiguration>()?.GetValue<string>("WebAPIHost") ?? throw new ArgumentException());
             });
+            builder.Services.AddHttpClient("ChatAPI", (sp, client) =>
+            {
+                client.BaseAddress = new Uri(sp.GetService<IConfiguration>()?.GetValue<string>("ChatAPIHost") ?? throw new ArgumentException());
+            });
             builder.Services.AddMudServices();
             builder.Services.AddMudMarkdownServices();
 

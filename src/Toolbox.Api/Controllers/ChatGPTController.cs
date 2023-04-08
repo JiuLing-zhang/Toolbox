@@ -33,6 +33,13 @@ public class ChatGPTController : ControllerBase
                 return;
             }
 
+            var requestTime = JiuLing.CommonLibs.Text.TimestampUtils.ConvertToDateTime(request.Timestamp);
+            if (DateTime.Now.Subtract(requestTime).TotalSeconds > 120)
+            {
+                await outputStream.WriteAsync(Encoding.UTF8.GetBytes("error:13:请求不可用"));
+                return;
+            }
+
             if (request.Prompt.Length > _appSettings.OpenAI.ContextMaxLength)
             {
                 await outputStream.WriteAsync(Encoding.UTF8.GetBytes("error:11:内容已超过最大长度限制"));
@@ -111,6 +118,11 @@ public class ChatGPTController : ControllerBase
         if (sign != request.Sign)
         {
             return Ok(new ApiResponse(12, "非法请求"));
+        }
+        var requestTime = JiuLing.CommonLibs.Text.TimestampUtils.ConvertToDateTime(request.Timestamp);
+        if (DateTime.Now.Subtract(requestTime).TotalSeconds > 120)
+        {
+            return Ok(new ApiResponse(13, "请求不可用"));
         }
 
         if (request.Prompt.Length > _appSettings.OpenAI.ContextMaxLength)
