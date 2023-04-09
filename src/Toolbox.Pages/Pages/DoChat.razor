@@ -3,8 +3,8 @@
 @using JiuLing.CommonLibs.ExtensionMethods;
 @using System.Text.Json;
 @using System.Text;
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
 @using Toolbox.Pages.Models
-
 @inject IHttpClientFactory HttpClientFactory;
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
@@ -280,41 +280,36 @@
                 timestamp,
                 sign = JiuLing.CommonLibs.Security.SHA1Utils.GetStringValueToLower($"{timestamp}{timestamp}{timestamp}")
             };
-            var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"chatgpt/do-chat-streaming");
-            requestMessage.Content = new StringContent(JsonSerializer.Serialize(postObj), Encoding.UTF8, "application/json");
-            var response = await HttpClientFactory.CreateClient("ChatAPI").SendAsync(requestMessage);
-            using (var stream = await response.Content.ReadAsStreamAsync())
-            {
-                using (var reader = new StreamReader(stream))
+
+            var sc = new StringContent(postObj.ToJson(), Encoding.UTF8, "application/json");
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, "chatgpt/do-chat-streaming")
                 {
-                    while (!reader.EndOfStream)
-                    {
-                        var currentLine = reader.ReadLine() ?? "";
-                        if (currentLine.StartsWith("error:"))
-                        {
-                            currentLine = currentLine.TrimStart(new char[] { 'e', 'r', 'r', 'o', 'r', ':' }).Trim();
-                            if (Convert.ToInt32(currentLine.Substring(0, 2)) == 10)
-                            {
-                                _isShowRetry = true;
-                            }
-                            throw new Exception(currentLine.Substring(3));
-                        }
-                        if (!currentLine.StartsWith("data:"))
-                        {
-                            _sbAnswerStream.AppendLine();
-                            continue;
-                        }
-                        currentLine = currentLine.TrimStart(new char[] { 'd', 'a', 't', 'a', ':' });
-                        if (currentLine == "[DONE]")
-                        {
-                            return;
-                        }
-                        _sbAnswerStream.Append(currentLine);
-                        StateHasChanged();
-                        jsInProcess.InvokeVoid("ScrollToEnd", "message-end");
-                        await Task.Delay(1);
-                    }
+                    Content = sc
+                };
+            requestMessage.SetBrowserResponseStreamingEnabled(true);
+            var response = await HttpClientFactory.CreateClient("ChatAPI").SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
+            await foreach (var chatResult in JsonSerializer.DeserializeAsyncEnumerable<ApiResult>(await response.Content.ReadAsStreamAsync()))
+            {
+                if (chatResult == null)
+                {
+                    continue;
                 }
+                if (chatResult.Code == 0)
+                {
+                    return;
+                }
+                if (chatResult.Code == 1)
+                {
+                    _sbAnswerStream.Append(chatResult.Message);
+                    StateHasChanged();
+                    jsInProcess.InvokeVoid("ScrollToEnd", "message-end");
+                    continue;
+                }
+                if (chatResult.Code == 10)
+                {
+                    _isShowRetry = true;
+                }
+                throw new Exception(chatResult.Message);
             }
         }
         catch (Exception ex)
