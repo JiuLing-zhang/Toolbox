@@ -23,42 +23,42 @@ public class ChatGPTController : ControllerBase
     [HttpGet("test")]
     public async IAsyncEnumerable<string> Test()
     {
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 1000; i++)
         {
-            await Task.Delay(1000);
-            yield return $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} i";
+            await Task.Delay(5);
+            yield return $"{i}";
         }
     }
 
     [HttpPost("test")]
     public async IAsyncEnumerable<string> Test2()
     {
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 1000; i++)
         {
-            await Task.Delay(1000);
-            yield return $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} i";
+            await Task.Delay(5);
+            yield return $"{i}";
         }
     }
 
     [HttpPost("do-chat-streaming")]
-    public async IAsyncEnumerable<ApiResponse> GetStreaming(ChatGPTRequest request)
+    public async IAsyncEnumerable<string> GetStreaming(ChatGPTRequest request)
     {
         var sign = JiuLing.CommonLibs.Security.SHA1Utils.GetStringValueToLower($"{request.Timestamp}{request.Timestamp}{request.Timestamp}");
         if (sign != request.Sign)
         {
-            yield return new ApiResponse(11, "非法请求");
+            yield return "11非法请求";
             yield break;
         }
         var requestTime = JiuLing.CommonLibs.Text.TimestampUtils.ConvertToDateTime(request.Timestamp);
         if (DateTime.Now.Subtract(requestTime).TotalSeconds > 120)
         {
-            yield return new ApiResponse(12, "请求不可用");
+            yield return "12请求不可用";
             yield break;
         }
 
         if (request.Prompt.Length > _appSettings.OpenAI.ContextMaxLength)
         {
-            yield return new ApiResponse(13, "内容已超过最大长度限制");
+            yield return "13内容已超过最大长度限制";
             yield break;
         }
 
@@ -91,7 +91,7 @@ public class ChatGPTController : ControllerBase
                 var json = $"{currentLine}{await reader.ReadToEndAsync()}";
                 var error = JsonSerializer.Deserialize<OpenAIStreamErrorResult>(json);
                 var errorString = error?.Error?.Message ?? json;
-                yield return new ApiResponse(10, errorString);
+                yield return $"10{errorString}";
                 yield break;
             }
 
@@ -102,7 +102,7 @@ public class ChatGPTController : ControllerBase
             currentLine = currentLine.TrimStart(new char[] { 'd', 'a', 't', 'a', ':' }).Trim();
             if (currentLine == "[DONE]")
             {
-                yield return new ApiResponse(0, "内容已超过最大长度限制");
+                yield return "00";
                 yield break;
             }
             var streamResult = JsonSerializer.Deserialize<OpenAIStreamResult>(currentLine);
@@ -111,7 +111,8 @@ public class ChatGPTController : ControllerBase
             {
                 continue;
             }
-            yield return new ApiResponse(1, data);
+            await Task.Delay(5);
+            yield return $"01{data}";
         }
     }
 

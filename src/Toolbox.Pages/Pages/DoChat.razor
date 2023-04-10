@@ -288,28 +288,31 @@
                 };
             requestMessage.SetBrowserResponseStreamingEnabled(true);
             var response = await HttpClientFactory.CreateClient("ChatAPI").SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
-            await foreach (var chatResult in JsonSerializer.DeserializeAsyncEnumerable<ApiResult>(await response.Content.ReadAsStreamAsync()))
+            await foreach (var rowData in JsonSerializer.DeserializeAsyncEnumerable<string>(await response.Content.ReadAsStreamAsync()))
             {
-                if (chatResult == null)
+                if (rowData == null)
                 {
                     continue;
                 }
-                if (chatResult.Code == 0)
+                var code = rowData.Substring(0, 2);
+                var message = rowData.Substring(2);
+                if (code == "00")
                 {
                     return;
                 }
-                if (chatResult.Code == 1)
+                if (code == "01")
                 {
-                    _sbAnswerStream.Append(chatResult.Message);
+                    await Task.Delay(5);
+                    _sbAnswerStream.Append(message);
                     StateHasChanged();
                     jsInProcess.InvokeVoid("ScrollToEnd", "message-end");
                     continue;
                 }
-                if (chatResult.Code == 10)
+                if (code == "10")
                 {
                     _isShowRetry = true;
                 }
-                throw new Exception(chatResult.Message);
+                throw new Exception(message);
             }
         }
         catch (Exception ex)
