@@ -17,6 +17,7 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using Toolbox.Api.Models;
 using Toolbox.Api.Middlewares;
+using Toolbox.Api.Factories;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -47,6 +48,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
+builder.Services.AddTransient<IOpenAIChatFactory, OpenAIChatFactory>();
 builder.Services.AddTransient<IDatabaseConfigService, DatabaseConfigService>();
 builder.Services.AddTransient<IAppService, AppService>();
 builder.Services.AddTransient<IAppReleaseRepository, AppReleaseRepository>();

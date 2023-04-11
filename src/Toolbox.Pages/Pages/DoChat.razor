@@ -12,27 +12,46 @@
 <PageTitle>码术 - AI 聊天</PageTitle>
 <div class="chat-message">
     <div style="display:flex">
-        <MudChipSet @bind-SelectedChip="_modelSelected" Filter="true" Mandatory=true>
-            <MudChip Text="0"
-                     Disabled="@_isLoading"
-                     Variant="Variant.Outlined"
-                     Color="Color.Info">普通模式</MudChip>
-            <MudChip Text="1"
-                     Disabled="@_isLoading"
-                     Variant="Variant.Outlined"
-                     Color="Color.Info"
-                     Default=true>程序员模式</MudChip>
-        </MudChipSet>
-        <MudChipSet @bind-SelectedChip="_saveContextSelected" Filter="true">
-            <MudChip Text="SaveContext"
-                     Disabled="@_isLoading"
-                     Variant="Variant.Outlined"
-                     Color="Color.Warning"
-                     OnClick="OnSaveContextChanged">连续对话模式</MudChip>
-        </MudChipSet>
+
+        <MudSelect @bind-Value="_selectedModel"
+                   Class="mr-4"
+                   Label="模型"
+                   Dense="true"
+                   Disabled="@_isLoading"
+                   Adornment="Adornment.Start"
+                   AdornmentIcon="@Icons.Material.Filled.Abc"
+                   AdornmentColor="Color.Secondary">
+            <MudSelectItem Value="@(1)">gpt-3.5-turbo</MudSelectItem>
+            <MudSelectItem Value="@(2)">text-davinci-003</MudSelectItem>
+        </MudSelect>
+
+        <MudSelect @bind-Value="_selectedChatType"
+                   Class="ml-4 mr-4"
+                   Label="模式"
+                   Dense="true"
+                   Disabled="@(_isLoading||_selectedModel!=1)"
+                   Adornment="Adornment.Start"
+                   AdornmentIcon="@Icons.Material.Filled.Code"
+                   AdornmentColor="Color.Secondary">
+            <MudSelectItem Value="@(0)">普通模式</MudSelectItem>
+            <MudSelectItem Value="@(1)">程序员模式</MudSelectItem>
+        </MudSelect>
+
+        <MudSelect Label="连续对话模式"
+                   Class="ml-4"
+                   T="bool"
+                   Dense="true"
+                   Disabled="@_isLoading"
+                   Adornment="Adornment.Start"
+                   AdornmentIcon="@Icons.Material.Filled.Person"
+                   AdornmentColor="Color.Secondary"
+                   ValueChanged="OnSaveContextChanged">
+            <MudSelectItem Value="@(true)">开启</MudSelectItem>
+            <MudSelectItem Value="@(false)">关闭</MudSelectItem>
+        </MudSelect>
     </div>
 
-    @if (_isShowWarning)
+    @if (_selectedSaveContext)
     {
         <MudAlert Severity="Severity.Warning"
               Class="mt-3"
@@ -41,14 +60,33 @@
 
     @if (_histories.Count == 0)
     {
-        <MudAlert Class="mt-3" Icon="@Icons.Material.Filled.Person" Severity="Severity.Success">普通模式 - 普通接入</MudAlert>
-        <MudAlert Class="mt-1" Icon="@Icons.Material.Filled.Code" Severity="Severity.Success">程序员模式 - 接入了一个大神程序员</MudAlert>
-        <MudAlert Class="mt-1" Icon="@Icons.Material.Filled.Abc" Severity="Severity.Success">连续对话模式 - 会保存聊天语境</MudAlert>
+        <MudText Class="mt-3 ml-3 d-flex align-center">
+            模型
+            <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.Abc" Size="Size.Small"></MudIcon>
+        </MudText>
+        <MudAlert Dense="true" NoIcon="true" Severity="Severity.Success">text-davinci-003：速度快，对自然语言友好，对代码不友好</MudAlert>
+        <MudAlert Dense="true" NoIcon="true" Severity="Severity.Success">
+            gpt-3.5-turbo：速度慢，但是真强大
+            <MudChip Color="Color.Error" Size="Size.Small">最近巨慢，普通问题还是使用 davinci 吧</MudChip>
+        </MudAlert>
+
+        <MudText Class="mt-3 ml-3 d-flex align-center">
+            模式
+            <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.Code" Size="Size.Small"></MudIcon>
+            <MudChip Variant="Variant.Text" Color="Color.Warning">仅在使用 gpt-3.5-turbo 模型时可用</MudChip>
+        </MudText>
+        <MudAlert Dense="true" NoIcon="true" Severity="Severity.Success">普通模式：最基础的接入</MudAlert>
+        <MudAlert Dense="true" NoIcon="true" Severity="Severity.Success">程序员模式：你对面坐了一个大神程序员</MudAlert>
+
+        <MudText Class="mt-3 ml-3 d-flex align-center">
+            其它
+            <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.Person" Size="Size.Small"></MudIcon>
+        </MudText>
+        <MudAlert Dense="true" NoIcon="true" Severity="Severity.Success">连续对话模式：会保存聊天语境</MudAlert>
     }
 
     @foreach (var history in _histories)
     {
-
         <MudPaper Class="pa-2 mt-3" Square="true" Outlined="true">
             <div class="d-flex align-start mb-3">
                 <MudIcon Class="mt-1"
@@ -58,34 +96,44 @@
                 <MudText Class="ml-2" Typo="Typo.subtitle1">@history.Question</MudText>
             </div>
 
-            @if (history.Answer.IsEmpty())
+            <div class="d-flex">
+                <MudIcon Class="mr-2"
+                     Icon="@Icons.Material.Filled.SmartToy"
+                     Color="Color.Secondary"
+                     Size="Size.Small" />
+                <MudMarkdown Value="@history.Answer" />
+            </div>
+
+            @if (_isShowRetry && history.Equals(_histories.Last()))
             {
-                if (_sbAnswerStream.Length == 0)
-                {
-                    <MudProgressLinear Color="Color.Secondary"
+                <MudButton Class="ml-7"
+                   Variant="Variant.Filled"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Autorenew"
+                   OnClick="@(()=>RetryChat())"
+                   Color="Color.Error">重试</MudButton>
+            }
+        </MudPaper>
+    }
+    @if (_currentQuestion.IsNotEmpty())
+    {
+        <MudPaper Class="pa-2 mt-3" Square="true" Outlined="true">
+
+            <div class="d-flex align-start mb-3">
+                <MudIcon Class="mt-1"
+                     Icon="@Icons.Material.Filled.Chat"
+                     Color="Color.Primary"
+                     Size="Size.Small" />
+                <MudText Class="ml-2" Typo="Typo.subtitle1">@_currentQuestion</MudText>
+            </div>
+
+            @if (_currentAnswer.Length == 0)
+            {
+                <MudProgressLinear Color="Color.Secondary"
                            Striped="true"
                            Size="Size.Large"
                            Value="100"
                            Class="my-7" />
-                }
-                else
-                {
-                    <div class="d-flex">
-                        <MudIcon Class="mr-2"
-                     Icon="@Icons.Material.Filled.SmartToy"
-                     Color="Color.Secondary"
-                     Size="Size.Small" />
-                        @if (_modelSelected.Text == "1")
-                        {
-                            <MudMarkdown Value="@_sbAnswerStream.ToString()" />
-                        }
-                        else
-                        {
-                            <MudText Class="ml-2" Typo="Typo.body1">@_sbAnswerStream.ToString()</MudText>
-                        }
-                    </div>
-                }
-
             }
             else
             {
@@ -94,30 +142,13 @@
                      Icon="@Icons.Material.Filled.SmartToy"
                      Color="Color.Secondary"
                      Size="Size.Small" />
-                    @if (_modelSelected.Text == "1")
-                    {
-                        <MudMarkdown Value="@history.Answer" />
-                    }
-                    else
-                    {
-                        <MudText Class="ml-2" Typo="Typo.body1">@history.Answer</MudText>
-                    }
+                    <MudText Typo="Typo.body1">@_currentAnswer.ToString()</MudText>
                 </div>
             }
-            @if (_isShowRetry && history.Equals(_histories.Last()))
-            {
-                <MudButton Class="ml-7"
-                   Variant="Variant.Filled"
-                   Size="Size.Small"
-                   StartIcon="@Icons.Material.Filled.Autorenew"
-                   OnClick="RetryChat"
-                   Color="Color.Error">重试</MudButton>
-            }
-
         </MudPaper>
     }
 
-    <div id="message-end" style="height:0px; overflow:hidden"></div>
+    <div id="message-end" style="height:0; overflow:hidden"></div>
 </div>
 <div class="chat-tools">
     <MudTextField Label="想聊点什么呢？"
@@ -127,20 +158,19 @@
                   Adornment="Adornment.End"
                   AdornmentColor="Color.Secondary"
                   AdornmentIcon="@Icons.Material.Filled.Send"
-                  OnAdornmentClick="BeginChat"
-                  OnKeyUp="KeyUp" />
+                  OnAdornmentClick="@(()=>BeginChat())"
+                  OnKeyUp="@((args)=>KeyUp(args.Key))" />
 </div>
 @code {
-    private bool _isShowRetry = false;
+    private int _selectedModel = 1;
+    private int _selectedChatType = 1;
+    private bool _selectedSaveContext;
+    private bool _isShowRetry;
     private bool _isLoading;
     private string _searchKey = "";
-    private bool _isSaveContext = false;
-    private bool _isShowWarning => _isSaveContext;
+    private string _currentQuestion = "";
+    private readonly StringBuilder _currentAnswer = new StringBuilder();
     private List<QuestionAndAnswer> _histories = null!;
-    private MudChip _modelSelected;
-    private MudChip? _saveContextSelected;
-    private readonly StringBuilder _sbAnswerStream = new StringBuilder();
-    private volatile bool _isReadingStream = true;
 
     protected override Task OnInitializedAsync()
     {
@@ -148,20 +178,20 @@
         return base.OnInitializedAsync();
     }
 
-    private void KeyUp(KeyboardEventArgs args)
+    private async Task KeyUp(string key)
     {
-        if (args.Key != "Enter")
+        if (key != "Enter")
         {
             return;
         }
-        InvokeAsync(RequestOpenAIStreaming);
+        await RequestOpenAIStreaming();
     }
 
-    private async void OnSaveContextChanged()
+    private async void OnSaveContextChanged(bool value)
     {
-        if (_saveContextSelected == null)
+        _selectedSaveContext = value;
+        if (_selectedSaveContext == false)
         {
-            _isSaveContext = false;
             return;
         }
 
@@ -174,14 +204,13 @@
                 StateHasChanged();
             }
         }
-        _isSaveContext = true;
     }
 
-    private async void BeginChat()
+    private async Task BeginChat()
     {
         await RequestOpenAIStreaming();
     }
-    private async void RetryChat()
+    private async Task RetryChat()
     {
         var question = _histories.Last().Question;
         if (question.IndexOf("提问:") == 0)
@@ -205,20 +234,18 @@
         _isLoading = true;
         _isShowRetry = false;
 
-        string question = _isSaveContext ? $"提问:{_searchKey}" : _searchKey;
-        string answer = "";
+        _currentQuestion = _selectedSaveContext ? $"提问:{_searchKey}" : _searchKey;
         _searchKey = "";
-        string context = _isSaveContext ? string.Join("\n", _histories.Select(x => $"{x.Question}\n{x.Answer}")) : "";
-        _histories.Add(new QuestionAndAnswer(question, answer));
-        StateHasChanged();
+        string context = _selectedSaveContext ? string.Join("\n", _histories.Select(x => $"{x.Question}\n{x.Answer}")) : "";
+
         try
         {
-            string prompt = $"{context}{question}";
+            string prompt = $"{context}{_currentQuestion}";
             long timestamp = JiuLing.CommonLibs.Text.TimestampUtils.GetLen13();
             var postObj = new
             {
                 prompt,
-                chatType = Convert.ToInt32(_modelSelected.Text),
+                chatType = _selectedChatType,
                 timestamp,
                 sign = JiuLing.CommonLibs.Security.MD5Utils.GetStringValueToLower($"{timestamp}{timestamp}{timestamp}")
             };
@@ -227,25 +254,26 @@
 
             if (result == null || result.Code != 0 || result.Data == null)
             {
-                answer = result?.Message ?? "服务器未正确响应";
+                _currentAnswer.Append(result?.Message ?? "服务器未正确响应");
                 if (result?.Code == 10)
                 {
                     _isShowRetry = true;
                 }
                 return;
             }
-            answer = result.Data;
+            _currentAnswer.Append(result.Data);
         }
         catch (Exception ex)
         {
-            answer = $"出错了：{ex.Message}";
+            _currentAnswer.Append($"出错了：{ex.Message}");
             _isShowRetry = true;
         }
         finally
         {
-            _histories.Last(x => x.Question == question).Answer = answer;
+            _histories.Add(new QuestionAndAnswer(_currentQuestion, _currentAnswer.ToString()));
+            _currentQuestion = "";
+            _currentAnswer.Clear();
             _isLoading = false;
-            StateHasChanged();
         }
     }
 
@@ -262,21 +290,20 @@
         _isLoading = true;
         _isShowRetry = false;
 
-        string question = _isSaveContext ? $"提问:{_searchKey}" : _searchKey;
-        _sbAnswerStream.Clear();
+        _currentQuestion = _selectedSaveContext ? $"提问:{_searchKey}" : _searchKey;
         _searchKey = "";
-        string context = _isSaveContext ? string.Join("\n", _histories.Select(x => $"{x.Question}\n{x.Answer}")) : "";
-        _histories.Add(new QuestionAndAnswer(question, ""));
-        StateHasChanged();
+        string context = _selectedSaveContext ? string.Join("\n", _histories.Select(x => $"{x.Question}\n{x.Answer}")) : "";
+
         var jsInProcess = (IJSInProcessRuntime)JSRuntime;
         try
         {
-            string prompt = $"{context}{question}";
+            string prompt = $"{context}{_currentQuestion}";
             long timestamp = JiuLing.CommonLibs.Text.TimestampUtils.GetLen13();
             var postObj = new
             {
                 prompt,
-                chatType = Convert.ToInt32(_modelSelected.Text),
+                chatType = _selectedChatType,
+                model = _selectedModel,
                 timestamp,
                 sign = JiuLing.CommonLibs.Security.SHA1Utils.GetStringValueToLower($"{timestamp}{timestamp}{timestamp}")
             };
@@ -294,21 +321,21 @@
                 {
                     continue;
                 }
-                var code = rowData.Substring(0, 2);
-                var message = rowData.Substring(2);
-                if (code == "00")
+                var code = rowData.Substring(0, 3);
+                var message = rowData.Substring(3);
+                if (code == "00 ")
                 {
                     return;
                 }
-                if (code == "01")
+                if (code == "01 ")
                 {
-                    await Task.Delay(5);
-                    _sbAnswerStream.Append(message);
+                    _currentAnswer.Append(message);
                     StateHasChanged();
+                    await Task.Delay(1);
                     jsInProcess.InvokeVoid("ScrollToEnd", "message-end");
                     continue;
                 }
-                if (code == "10")
+                if (code == "10 ")
                 {
                     _isShowRetry = true;
                 }
@@ -317,16 +344,16 @@
         }
         catch (Exception ex)
         {
-            _sbAnswerStream.AppendLine();
-            _sbAnswerStream.Append($"出错了：{ex.Message}");
+            _currentAnswer.AppendLine();
+            _currentAnswer.Append($"出错了：{ex.Message}");
             _isShowRetry = true;
         }
         finally
         {
-            _isReadingStream = false;
             _isLoading = false;
-            _histories.Last(x => x.Question == question).Answer = _sbAnswerStream.ToString();
-            StateHasChanged();
+            _histories.Add(new QuestionAndAnswer(_currentQuestion, _currentAnswer.ToString()));
+            _currentQuestion = "";
+            _currentAnswer.Clear();
             jsInProcess.InvokeVoid("ScrollToEnd", "message-end");
         }
     }

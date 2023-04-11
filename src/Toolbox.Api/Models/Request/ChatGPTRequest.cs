@@ -8,4 +8,6 @@ public class ChatGPTRequest : SignRequest
     public string Prompt { get; set; } = null!;
 
     public ChatTypeEnum ChatType { get; set; }
+
+    public OpenAIModelEnum Model { get; set; }
 }
