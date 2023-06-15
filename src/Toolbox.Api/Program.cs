@@ -53,7 +53,6 @@ builder.Services.AddTransient<IDatabaseConfigService, DatabaseConfigService>();
 builder.Services.AddTransient<IAppService, AppService>();
 builder.Services.AddTransient<IAppReleaseRepository, AppReleaseRepository>();
 builder.Services.AddTransient<IConfigBaseRepository, ConfigBaseRepository>();
-builder.Services.AddTransient<IAppInfoRepository, AppInfoRepository>();
 builder.Services.AddTransient<IAppBaseRepository, AppBaseRepository>();
 builder.Services.AddTransient<IComponentRepository, ComponentRepository>();
 
