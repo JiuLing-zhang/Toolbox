@@ -1,18 +1,20 @@
 ﻿@page "/hash"
 
-@using JiuLing.CommonLibs.ExtensionMethods;
-@using JiuLing.CommonLibs.Security
 @using Microsoft.Extensions.Configuration;
+@using Toolbox.Pages.Enums;
+@using Toolbox.Pages.HashCheckService;
 @using Toolbox.Pages.Shared.Dialogs;
+
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
 @inject IDialogService Dialog
+@inject HashServiceFactory HashServiceFactory;
 
 <PageTitle>码术 - 哈希工具</PageTitle>
 
 <MudButtonGroup Class="mt-2"
                 OverrideStyles=false>
-    @foreach (var hashType in _hashTypeList)
+    @foreach (HashTypeEnum hashType in Enum.GetValues(typeof(HashTypeEnum)))
     {
         Color color;
         if (_currentHashType == hashType)
@@ -24,9 +26,10 @@
             color = Color.Dark;
         }
         <MudButton Color="@(color)"
-               Variant="Variant.Outlined"
-               OnClick="@(()=>HashTypeSwitch(hashType))">@hashType</MudButton>
+                   Variant="Variant.Outlined"
+                   OnClick="@(()=>HashTypeSwitchAsync(hashType))">@hashType</MudButton>
     }
+
 </MudButtonGroup>
 
 <MudGrid Spacing="3" Class="mt-4">
@@ -43,7 +46,7 @@
         <MudText Typo="Typo.subtitle2">文件计算</MudText>
         <MudStack Style="width: 100%">
             <MudFileUpload T="IBrowserFile" OnFilesChanged="OnInputFileChanged" Hidden="false" Class="flex-1" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
-                           @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
+            @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
                 <ButtonTemplate>
                     @if (_fileName.IsEmpty())
                     {
@@ -57,8 +60,8 @@
                     {
                         <MudPaper Height="150px" Outlined="true" Class="relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-30">
                             <MudChip Color="Color.Dark"
-                                 Text="@_fileName"
-                                 OnClose="@(()=>RemoveFile())" />
+                                     Text="@_fileName"
+                                     OnClose="@(()=>RemoveFile())" />
                         </MudPaper>
                     }
                 </ButtonTemplate>
@@ -67,18 +70,9 @@
     </MudItem>
 
     <MudItem xs="12">
-        <MudToolBar Class="align-end pl-0 pr-0">
+        <div class="d-flex align-center mt-2">
             <MudText Typo="Typo.subtitle2" Color="Color.Info" Class="mr-1">@_currentHashType</MudText>
             <MudText Typo="Typo.subtitle2" Class="mr-5">计算结果</MudText>
-            <div style="width: 100px;">
-                <MudSelect Margin="Margin.Dense"
-                           T="string"
-                           @bind-Value="_encoding"
-                           Label="编码"
-                           Variant="Variant.Text">
-                    <MudSelectItem Value="@("UTF-8")" />
-                </MudSelect>
-            </div>
             <MudSwitch Class="ml-5"
                        T="bool"
                        CheckedChanged="@((value)=>OnIsUpperChanged(value))"
@@ -87,9 +81,9 @@
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
                            Color="Color.Success"
-                           OnClick="@(DoContentCopy)"
+                           OnClick="@(DoContentCopyAsync)"
                            Size="Size.Small" />
-        </MudToolBar>
+        </div>
 
         <MudTextField T="string"
                       Variant="Variant.Outlined"
@@ -102,8 +96,7 @@
 
 @code {
     private bool _isLoading = false;
-    private string _currentHashType = "SHA1";
-    private readonly List<string> _hashTypeList = new List<string>() { "SHA1", "SHA256" };
+    private HashTypeEnum _currentHashType = HashTypeEnum.MD5;
     private static readonly string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-10";
     private string _dragClass = DefaultDragClass;
 
@@ -114,13 +107,12 @@
     private string _inputText = "";
     private string _fileName = "";
     private byte[]? _fileBytes;
-    private string _encoding = "UTF-8";
     private bool _isUpper = false;
     private string _hashResult = "";
-    private void HashTypeSwitch(string hashType)
+    private async Task HashTypeSwitchAsync(HashTypeEnum hashType)
     {
         _currentHashType = hashType;
-        GetHashInner();
+        await GetHashInnerAsync();
     }
 
     private async void OnInputFileChanged(InputFileChangeEventArgs e)
@@ -144,7 +136,7 @@
         await e.GetMultipleFiles()[0].OpenReadStream(maxFileSize).CopyToAsync(ms);
         _fileBytes = ms.ToArray();
         _isCalculateForText = false;
-        GetHashInner();
+        await GetHashInnerAsync();
     }
     private void RemoveFile()
     {
@@ -161,116 +153,50 @@
     {
         _dragClass = DefaultDragClass;
     }
-    private void OnInputTextChanged(string value)
+    private async Task OnInputTextChanged(string value)
     {
         _isCalculateForText = true;
         _inputText = value;
-        GetHashInner();
+        await GetHashInnerAsync();
     }
 
-    private void OnIsUpperChanged(bool value)
+    private Task OnIsUpperChanged(bool value)
     {
+        if (value)
+        {
+            _hashResult = _hashResult.ToUpper();
+        }
+        else
+        {
+            _hashResult = _hashResult.ToLower();
+        }
         _isUpper = value;
-        GetHashInner();
+        return Task.CompletedTask;
     }
 
-    private void GetHashInner()
+    private async Task GetHashInnerAsync()
     {
-        switch (_currentHashType)
+        if ((_isCalculateForText && _inputText.IsEmpty()) || (!_isCalculateForText && _fileBytes == null))
         {
-            case "SHA1":
-                GetSHA1();
-                break;
-            case "SHA256":
-                GetSHA256();
-                break;
-            default:
-                _hashResult = "不支持的类型";
-                break;
+            _hashResult = "";
+            _isLoading = false;
+            return;
         }
-    }
 
-    private void GetSHA1()
-    {
+        var hashService = HashServiceFactory.Create(_currentHashType);
         if (_isCalculateForText)
         {
-            if (_inputText.IsEmpty())
-            {
-                _hashResult = "";
-                _isLoading = false;
-                return;
-            }
-            if (_isUpper)
-            {
-                _hashResult = SHA1Utils.GetStringValueToUpper(_inputText);
-            }
-            else
-            {
-                _hashResult = SHA1Utils.GetStringValueToLower(_inputText);
-            }
+            _hashResult = await hashService.ComputeHashAsync(_inputText, _isUpper);
         }
         else
         {
-            if (_fileBytes == null)
-            {
-                _hashResult = "";
-                _isLoading = false;
-                return;
-            }
-            if (_isUpper)
-            {
-                _hashResult = SHA1Utils.GetBytesValueToUpper(_fileBytes);
-            }
-            else
-            {
-                _hashResult = SHA1Utils.GetBytesValueToLower(_fileBytes);
-            }
-            _isLoading = false;
-            StateHasChanged();
+            _hashResult = await hashService.ComputeHashAsync(_fileBytes, _isUpper);
         }
+        _isLoading = false;
+        await InvokeAsync(StateHasChanged);
     }
 
-    private void GetSHA256()
-    {
-        if (_isCalculateForText)
-        {
-            if (_inputText.IsEmpty())
-            {
-                _hashResult = "";
-                _isLoading = false;
-                return;
-            }
-            if (_isUpper)
-            {
-                _hashResult = SHA256Utils.GetStringValueToUpper(_inputText);
-            }
-            else
-            {
-                _hashResult = SHA256Utils.GetStringValueToLower(_inputText);
-            }
-        }
-        else
-        {
-            if (_fileBytes == null)
-            {
-                _hashResult = "";
-                _isLoading = false;
-                return;
-            }
-            if (_isUpper)
-            {
-                _hashResult = SHA256Utils.GetBytesValueToUpper(_fileBytes);
-            }
-            else
-            {
-                _hashResult = SHA256Utils.GetBytesValueToLower(_fileBytes);
-            }
-            _isLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    private async void DoContentCopy()
+    private async void DoContentCopyAsync()
     {
         await JSRuntime.InvokeAsync<object>("copyToClipboard", _hashResult);
     }

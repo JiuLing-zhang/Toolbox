@@ -4,6 +4,8 @@ using Toolbox.Web;
 using MudBlazor.Services;
 using MudBlazor;
 using Toolbox.Pages;
+using Toolbox.Pages.HashCheckService;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -21,6 +23,7 @@ builder.Services.AddHttpClient("ChatAPI", client =>
     client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("ChatAPIHost") ?? throw new ArgumentException());
 });
 
+builder.Services.AddSingleton<HashServiceFactory>();
 builder.Services.AddMudServices();
 builder.Services.AddMudMarkdownServices();
 
