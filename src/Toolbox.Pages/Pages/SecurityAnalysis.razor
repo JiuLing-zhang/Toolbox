@@ -1,0 +1,75 @@
+﻿@page "/security"
+
+@using Toolbox.Pages.Enums;
+@using Toolbox.Pages.HashCheckService;
+@using Toolbox.Pages.Shared.Dialogs;
+
+@inject IDialogService Dialog
+@inject HashServiceFactory HashServiceFactory;
+@inject NavigationManager NavigationManager
+
+<PageTitle>码术 - 安全分析</PageTitle>
+
+<DialogLoading IsVisible="@_isLoading" ContentText="正在计算文件哈希值..."></DialogLoading>
+
+<MudFileUpload T="IBrowserFile" OnFilesChanged="OnInputFileChanged" Hidden="false" Class="flex-1" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
+@ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
+    <ButtonTemplate>
+        @if (_fileName.IsEmpty())
+        {
+            <MudPaper Height="150px" Outlined="true" Class="@_dragClass">
+                <MudText Typo="Typo.h6">
+                    点击这里选择文件 或 拖拽文件到该区域
+                </MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <MudPaper Height="150px" Outlined="true" Class="relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-30">
+                <MudChip Color="Color.Dark"
+                         Text="@_fileName" />
+            </MudPaper>
+        }
+    </ButtonTemplate>
+</MudFileUpload>
+@code {
+    private static readonly string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-10";
+    private string _dragClass = DefaultDragClass;
+
+    private string _fileName = "";
+    private bool _isLoading = false;
+    private async void OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        ClearDragClass();
+        long maxFileSize = 1000000000;
+        if (e.GetMultipleFiles()[0].Size >= maxFileSize)
+        {
+            var options = new DialogOptions()
+                {
+                    NoHeader = true
+                };
+            var parameters = new DialogParameters();
+            parameters.Add("ContentText", "文件大小超过系统限制");
+            Dialog.Show<DialogOk>("提示", parameters, options);
+            return;
+        }
+        _isLoading = true;
+        _fileName = e.GetMultipleFiles()[0].Name;
+        var ms = new MemoryStream();
+        await e.GetMultipleFiles()[0].OpenReadStream(maxFileSize).CopyToAsync(ms);
+        var fileBytes = ms.ToArray();
+        var hashService = HashServiceFactory.Create(HashTypeEnum.SHA1);
+        var hash = await hashService.ComputeHashAsync(fileBytes, false);
+        NavigationManager.NavigateTo($"/security/{hash}");
+    }
+
+    private void SetDragClass()
+    {
+        _dragClass = $"{DefaultDragClass} mud-border-primary";
+    }
+
+    private void ClearDragClass()
+    {
+        _dragClass = DefaultDragClass;
+    }
+}
