@@ -32,6 +32,19 @@
         }
     </ButtonTemplate>
 </MudFileUpload>
+
+<div class="mt-3">
+    本功能基于
+    <MudElement HtmlTag="a"
+                Class="ma-0"
+                Style="color:#154FD7;font-weight:bold;"
+                href="https://www.virustotal.com/"
+                target="blank"
+                rel="noopener noreferrer">
+        VirusTotal
+    </MudElement>
+    的 API 实现
+</div>
 @code {
     private static readonly string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-10";
     private string _dragClass = DefaultDragClass;

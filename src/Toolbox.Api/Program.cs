@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Toolbox.Api;
 using Toolbox.Api.DbContext;
 using Toolbox.Api.ErrorHandler;
-using Toolbox.Api.Interface;
 using Toolbox.Api.Repositories;
 using Toolbox.Api.Services;
 using Microsoft.AspNetCore.StaticFiles;
@@ -55,6 +54,7 @@ builder.Services.AddTransient<IAppReleaseRepository, AppReleaseRepository>();
 builder.Services.AddTransient<IConfigBaseRepository, ConfigBaseRepository>();
 builder.Services.AddTransient<IAppBaseRepository, AppBaseRepository>();
 builder.Services.AddTransient<IComponentRepository, ComponentRepository>();
+builder.Services.AddTransient<IVirusTotalService, VirusTotalService>();
 
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 
@@ -70,6 +70,14 @@ builder.Services.AddHttpClient("OpenAI", (sp, client) =>
         client = new HttpClient(handler);
     }
 });
+
+builder.Services.AddHttpClient("VirusTotal", (sp, client) =>
+{
+    var appSettings = sp.GetService<IOptions<AppSettings>>()?.Value ?? throw new ArgumentException("配置文件异常");
+    client.BaseAddress = new Uri("https://www.virustotal.com/");
+    client.DefaultRequestHeaders.Add("x-apikey", appSettings.VirusTotalApiKey);
+});
+
 
 builder.Services.AddCors(setup =>
 {

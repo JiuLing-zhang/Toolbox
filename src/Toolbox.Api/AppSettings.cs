@@ -2,6 +2,7 @@
 public class AppSettings
 {
     public OpenAIAppSettings OpenAI { get; set; } = null!;
+    public string VirusTotalApiKey { get; set; } = null!;
 }
 
 public class OpenAIAppSettings

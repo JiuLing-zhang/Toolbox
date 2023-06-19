@@ -1,153 +1,203 @@
 ﻿@page "/security/{hash}"
 
+@using JiuLing.CommonLibs.Text;
 @using Microsoft.Extensions.Configuration;
 @using Toolbox.Pages.Enums;
 @using Toolbox.Pages.HashCheckService;
+@using Toolbox.Pages.Models;
 @using Toolbox.Pages.Shared.Dialogs;
 
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
 @inject IDialogService Dialog
 @inject HashServiceFactory HashServiceFactory;
+@inject IHttpClientFactory HttpClientFactory;
+@inject NavigationManager NavigationManager
 
 <PageTitle>码术 - 安全分析</PageTitle>
 
-<MudGrid Class="mt-4">
-    <MudItem md="3" xs="12">
-        <MudChart ChartType="ChartType.Donut"
-                  Width="120px"
-                  Height="120px"
-                  ChartOptions="_options"
-                  InputData="@data"
-                  InputLabels="@labels">
-            <CustomGraphics>
-                <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="black" font-size="8">@($"{data[1]}")</text>
-                <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="black" font-size="5" style="opacity: 0.7;">@($"/{data.Sum()}")</text>
-            </CustomGraphics>
-        </MudChart>
-    </MudItem>
-    <MudItem md="9" xs="12">
-        <MudGrid>
-            <MudItem Class="pt-0 pb-1" md="12" xs="12">
-                <MudAlert Severity="Severity.Error" Dense="true">
-                    @($"提示")
-                </MudAlert>
-            </MudItem>
-
-            <MudItem Class="pt-0 pb-1" md="2" xs="12">
-                文件名
-            </MudItem>
-            <MudItem Class="pt-0 pb-1" md="10" xs="12">
-                xxxxxx
-            </MudItem>
-
-            <MudItem Class="pt-0 pb-1" md="2" xs="12">
-                大小
-            </MudItem>
-            <MudItem Class="pt-0 pb-1" md="10" xs="12">
-                1000
-            </MudItem>
-
-            <MudItem Class="pt-0 pb-1" md="2" xs="12">
-                分析时间
-            </MudItem>
-            <MudItem Class="pt-0 pb-1" md="10" xs="12">
-                2022-06-06
-            </MudItem>
-
-            <MudItem Class="pt-0 pb-1" md="2" xs="12">
-                MD5
-            </MudItem>
-            <MudItem Class="pt-0 pb-1" md="10" xs="12">
-                yyyyyyyyy
-            </MudItem>
-
-            <MudItem Class="pt-0 pb-1" md="2" xs="12">
-                SHA1
-            </MudItem>
-            <MudItem Class="pt-0 pb-1" md="10" xs="12">
-                zzzzzzzzz
-            </MudItem>
-            <MudItem Class="pt-0 pb-1" md="2" xs="12">
-                SHA256
-            </MudItem>
-            <MudItem Class="pt-0 pb-1" md="10" xs="12">
-                tttttttttttt
-            </MudItem>
-
-            <MudItem Class="pt-0 pb-1" md="2" xs="12">
-                社区评分
-            </MudItem>
-            <MudItem Class="pt-0 pb-1" md="10" xs="12">
-                0
-            </MudItem>
-        </MudGrid>
-    </MudItem>
-</MudGrid>
-
-<MudPaper Class="border-dashed border-2 mud-border-primary pa-4 mt-10" Elevation="0">
-    <MudGrid>
-        <MudItem md="6" xs="12" Class="d-flex align-center">
-            <div class="vendor">SecureAge</div>
-            <div class="d-flex align-center">
-                <MudIcon Icon="@Icons.Material.Outlined.Cancel" />
-                <div class="result">Undetected</div>
-            </div>
+@if (_analysisRelust == null)
+{
+    <MudGrid Class="mt-4">
+        <MudItem Class="d-flex justify-center" md="3" xs="12">
+            <MudSkeleton Style="margin:0 auto;" SkeletonType="SkeletonType.Circle" Width="120px" Height="120px" />
         </MudItem>
-        <MudItem md="6" xs="12" Class="d-flex align-center">
-            <div class="vendor">Xcitium</div>
-            <div class="d-flex align-center">
-                <MudIcon Icon="@Icons.Material.Outlined.NotInterested" />
-                <div class="result">Malicious</div>
-            </div>
-        </MudItem>
-        <MudItem md="6" xs="12" Class="d-flex align-center">
-            <div class="vendor">Acronis </div>
-            <div class="d-flex align-center">
-                <MudIcon Icon="@Icons.Material.Outlined.Cancel" />
-                <div class="result">Undetected</div>
-            </div>
-        </MudItem>
-        <MudItem md="6" xs="12" Class="d-flex align-center">
-            <div class="vendor">BitDefender</div>
-            <div class="d-flex align-center">
-                <MudIcon Icon="@Icons.Material.Outlined.Info" />
-                <div class="result">Undetected</div>
-            </div>
-        </MudItem>
-        <MudItem md="6" xs="12" Class="d-flex align-center">
-            <div class="vendor">Cylance</div>
-            <div class="d-flex align-center">
-                <MudIcon Icon="@Icons.Material.Outlined.Info" />
-                <div class="result">Malicious.high.ml.score</div>
-            </div>
-        </MudItem>
-         <MudItem md="6" xs="12" Class="d-flex align-center">
-            <div class="vendor">Cylance</div>
-            <div class="d-flex align-center">
-                <MudIcon Icon="@Icons.Material.Outlined.NotInterested" />
-                <div class="result">Malicious.high.ml.score</div>
-            </div>
-        </MudItem>
-        <MudItem md="6" xs="12" Class="d-flex align-center">
-            <div class="vendor">Cylance</div>
-            <div class="d-flex align-center">
-                <MudIcon Icon="@Icons.Material.Outlined.Info" />
-                <div class="result">Malicious.high.ml.score</div>
-            </div>
+        <MudItem Class="d-flex align-center justify-center" md="9" xs="12">
+            <h2 style="opacity:0.7;">正在分析文件结果....</h2>
         </MudItem>
     </MudGrid>
-</MudPaper>
 
+    <MudPaper Class="pa-4 mt-10" Elevation="0">
+        <MudGrid>
+            @for (int i = 0; i < 12; i++)
+            {
+                <MudItem md="6" xs="12">
+                    <MudSkeleton />
+                </MudItem>
+            }
+        </MudGrid>
+    </MudPaper>
+}
+else
+{
+    <MudGrid Class="mt-4">
+        <MudItem md="3" xs="12">
+            <MudChart ChartType="ChartType.Donut"
+                      Width="120px"
+                      Height="120px"
+                      ChartOptions="_chartOptions"
+                      InputData="@_chartData"
+                      InputLabels="@_chartLabels">
+                <CustomGraphics>
+                    <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="black" font-size="8">@($"{_chartData[1]}")</text>
+                    <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="black" font-size="5" style="opacity: 0.7;">@($"/{_chartData.Sum()}")</text>
+                </CustomGraphics>
+            </MudChart>
+        </MudItem>
+        <MudItem md="9" xs="12">
+            <MudGrid>
+                <MudItem Class="pt-0 pb-1" md="12" xs="12">
+                    @if (_analysisRelust.PlatformStats.Malicious > 0)
+                    {
+                        <MudAlert Severity="Severity.Error" Dense="true">
+                            当前文件已被部分引擎标记为风险文件！
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Success">
+                            @if (_analysisRelust.KnownDistributor.IsEmpty())
+                            {
+                                @("文件未被任何引擎标记风险！")
+                            }
+                            else
+                            {
+                                @($"文件安全！发布者：{_analysisRelust.KnownDistributor}")
+                            }
+
+                        </MudAlert>
+                    }
+                </MudItem>
+
+                <MudItem Class="pt-0 pb-1" md="2" xs="12" Style="opacity:0.7;">
+                    文件名
+                </MudItem>
+                <MudItem Class="pt-0 pb-1" md="10" xs="12">
+                    @(_analysisRelust.FileName)
+                </MudItem>
+
+                <MudItem Class="pt-0 pb-1" md="2" xs="12" Style="opacity:0.7;">
+                    大小
+                </MudItem>
+                <MudItem Class="pt-0 pb-1" md="10" xs="12">
+                    @if (_analysisRelust.Size >= 1024 * 1024)
+                    {
+                        @($"{_analysisRelust.Size / 1024 / 1024:N2} MB")
+                    }
+                    else
+                    {
+                        @($"{_analysisRelust.Size / 1024:N2} KB")
+                    }
+                </MudItem>
+
+                <MudItem Class="pt-0 pb-1" md="2" xs="12" Style="opacity:0.7;">
+                    分析时间
+                </MudItem>
+                <MudItem Class="pt-0 pb-1" md="10" xs="12">
+                    @($"{TimestampUtils.ConvertToDateTime(_analysisRelust.AnalysisDate):yyyy-MM-dd}")
+                </MudItem>
+
+                <MudItem Class="pt-0 pb-1" md="2" xs="12" Style="opacity:0.7;">
+                    MD5
+                </MudItem>
+                <MudItem Class="pt-0 pb-1" md="10" xs="12">
+                    @(_analysisRelust.MD5)
+                </MudItem>
+
+                <MudItem Class="pt-0 pb-1" md="2" xs="12" Style="opacity:0.7;">
+                    SHA1
+                </MudItem>
+                <MudItem Class="pt-0 pb-1" md="10" xs="12">
+                    @(_analysisRelust.SHA1)
+                </MudItem>
+
+                <MudItem Class="pt-0 pb-1" md="2" xs="12" Style="opacity:0.7;">
+                    社区评分
+                </MudItem>
+                <MudItem Class="pt-0 pb-1" md="10" xs="12">
+                    @(_analysisRelust.Reputation)
+                    <span class="ml-2" style="opacity:0.7;">(默认0分。点赞加分/反之减分)</span>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="border-dashed border-2 mud-border-primary pa-4 mt-10 mb-10" Elevation="0">
+        <MudGrid>
+            @foreach (var platformResult in _analysisRelust.PlatformResults.OrderBy(x => x.Sort))
+            {
+                <MudItem md="6" xs="12" Class="d-flex align-center">
+                    <div class="vendor">
+                        @(platformResult.EngineName)
+                    </div>
+                    <div class="d-flex align-center">
+                        @if (platformResult.Category == "undetected")
+                        {
+                            <MudIcon Icon="@Icons.Material.Outlined.Info" Style="color:#00AA00;" />
+                            <div class="result">安全</div>
+                        }
+                        else if (platformResult.Category == "type-unsupported" || platformResult.Category == "timeout")
+                        {
+                            <MudIcon Icon="@Icons.Material.Outlined.NotInterested" Style="opacity:0.5;" />
+                            <div class="result" style="opacity:0.5;">已跳过</div>
+                        }
+                        else if (platformResult.Category == "malicious")
+                        {
+                            <MudIcon Icon="@Icons.Material.Outlined.WarningAmber" Style="color:#F21C0D;" />
+                            <div class="result" style="color:#F21C0D;">
+                                @(platformResult.Result)
+                            </div>
+                        }
+                        else
+                        {
+                            <MudText>未处理的数据</MudText>
+                        }
+
+                    </div>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudPaper>
+}
 
 @code {
     [Parameter]
     public string Hash { get; set; } = null!;
-    private double[] data = { 50, 2 };
-    private string[] labels = { "安全", "警告" };
-    private ChartOptions _options = new() { ChartPalette = new string[] { "#00AA00", "#F21C0D" } };
+    private double[] _chartData = null!;
+    private string[] _chartLabels = { "安全", "警告" };
+    private ChartOptions _chartOptions = new() { ChartPalette = new string[] { "#00AA00", "#F21C0D" } };
+    private AnalysisRelust? _analysisRelust;
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        ApiResult<AnalysisRelust>? apiResult = null;
+        try
+        {
+            apiResult = await HttpClientFactory.CreateClient("WebAPI").GetFromJsonAsync<ApiResult<AnalysisRelust>>($"virustotal/file/{Hash}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"连接服务器失败：{ex.Message}");
+        }
+        if (apiResult == null || apiResult.Code != 0 || apiResult.Data == null)
+        {
+            await Dialog.ShowMessageBox("提示", apiResult?.Message ?? "连接服务器失败", yesText: "确定");
+            NavigationManager.NavigateTo($"/security");
+            return;
+        }
+        var stats = apiResult.Data.PlatformStats;
+        _chartData = new double[] { Convert.ToDouble(stats.Undetected), Convert.ToDouble(stats.Malicious) };
+
+        _analysisRelust = apiResult.Data;
     }
 }
