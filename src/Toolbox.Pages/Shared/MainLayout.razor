@@ -19,9 +19,9 @@
         @if (!PlatformSettings.IsApp)
         {
             <MudMenu Label="下载客户端"
-                 Color="Color.Inherit"
-                 Dense="true"
-                 AnchorOrigin="Origin.BottomCenter">
+                     Color="Color.Inherit"
+                     Dense="true"
+                     AnchorOrigin="Origin.BottomCenter">
                 <MudMenuItem OnClick="@(()=>OnDownloadClick("tool-box_windows_1.0.4.5_7841.msix"))">
                     <MudImage Class="mr-1" Src="@($"_content/Toolbox.Pages/images/windows.png")" Width="15" Height="15"></MudImage>
                     Windows 平台
@@ -40,7 +40,9 @@
     </MudAppBar>
     <MudDrawer @bind-Open="@open" Elevation="1">
         <MudDrawerHeader>
-            <MudImage Src="_content/Toolbox.Pages/images/main-ascii.png" Width="80"></MudImage>
+            <div onclick="@(()=>GotoIndex())" class="cursor-pointer">
+                <MudImage Src="_content/Toolbox.Pages/images/main-ascii.png" Width="80"></MudImage>
+            </div>
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
@@ -68,5 +70,10 @@
         }
         var url = $"{Configuration["WebAPIHost"]}/apps/{fileName}";
         NavigationManager.NavigateTo(url);
+    }
+
+    private void GotoIndex()
+    {
+        NavigationManager.NavigateTo("/");
     }
 }

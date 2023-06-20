@@ -8,9 +8,13 @@
 @inject HashServiceFactory HashServiceFactory;
 @inject NavigationManager NavigationManager
 
-<PageTitle>码术 - 安全分析</PageTitle>
+<PageTitle>码术 - 文件分析</PageTitle>
 
 <DialogLoading IsVisible="@_isLoading" ContentText="正在计算文件哈希值..."></DialogLoading>
+
+<div class="mt-5 mb-5">
+    <h3>文件安全分析</h3>
+</div>
 
 <MudFileUpload T="IBrowserFile" OnFilesChanged="OnInputFileChanged" Hidden="false" Class="flex-1" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
 @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
@@ -33,7 +37,18 @@
     </ButtonTemplate>
 </MudFileUpload>
 
-<div class="mt-3">
+<MudText Class="mt-3 mb-3">或</MudText>
+
+<MudTextField @bind-Value="_hash"
+              Label="直接通过文件的 SHA1 值搜索分析结果"
+              Variant="Variant.Outlined"
+              Adornment="Adornment.End"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              AdornmentColor="Color.Secondary"
+              OnAdornmentClick="@(()=>GotoResultPage())"
+              OnKeyUp="@((args)=>KeyUp(args.Key))" />
+
+<div class="mt-8">
     本功能基于
     <MudElement HtmlTag="a"
                 Class="ma-0"
@@ -49,6 +64,7 @@
     private static readonly string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-10";
     private string _dragClass = DefaultDragClass;
 
+    private string _hash = "";
     private string _fileName = "";
     private bool _isLoading = false;
     private async void OnInputFileChanged(InputFileChangeEventArgs e)
@@ -72,8 +88,8 @@
         await e.GetMultipleFiles()[0].OpenReadStream(maxFileSize).CopyToAsync(ms);
         var fileBytes = ms.ToArray();
         var hashService = HashServiceFactory.Create(HashTypeEnum.SHA1);
-        var hash = await hashService.ComputeHashAsync(fileBytes, false);
-        NavigationManager.NavigateTo($"/security/{hash}");
+        _hash = await hashService.ComputeHashAsync(fileBytes, false);
+        GotoResultPage();
     }
 
     private void SetDragClass()
@@ -84,5 +100,23 @@
     private void ClearDragClass()
     {
         _dragClass = DefaultDragClass;
+    }
+
+    private void KeyUp(string key)
+    {
+        if (key != "Enter")
+        {
+            return;
+        }
+        GotoResultPage();
+    }
+
+    private void GotoResultPage()
+    {
+        if (_hash.IsEmpty())
+        {
+            return;
+        }
+        NavigationManager.NavigateTo($"/security/{_hash}");
     }
 }

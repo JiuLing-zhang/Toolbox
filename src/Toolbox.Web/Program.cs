@@ -22,6 +22,10 @@ builder.Services.AddHttpClient("ChatAPI", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("ChatAPIHost") ?? throw new ArgumentException());
 });
+builder.Services.AddHttpClient("VirusTotal", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("VirusTotalAPIHost") ?? throw new ArgumentException());
+});
 
 builder.Services.AddSingleton<HashServiceFactory>();
 builder.Services.AddMudServices();

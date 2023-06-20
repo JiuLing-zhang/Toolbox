@@ -4,7 +4,7 @@
 
 <PageTitle>码术</PageTitle>
 
-<MudGrid Class="mt-10" Spacing="6">
+<MudGrid Class="mt-10 mb-5" Spacing="6">
     <MudItem xs="12" md="6" Style="padding-left: 10%; padding-right: 10%;">
         <div class="tile" @onclick="@(()=>DoNavigate("/app"))">
             <div class="item">
@@ -27,17 +27,16 @@
         </div>
     </MudItem>
     <MudItem xs="12" md="6" Style="padding-left: 10%; padding-right: 10%;">
-        <div class="tile">
+        <div class="tile" @onclick="@(()=>DoNavigate("/security"))">
             <div class="item">
-                想 P2P 传输文件？
-                <MudChip Variant="Variant.Text" Class="mt-2" Color="Color.Warning">开发中</MudChip>
+                进行文件安全分析？
             </div>
         </div>
     </MudItem>
     <MudItem xs="12" md="6" Style="padding-left: 10%; padding-right: 10%;">
         <div class="tile">
             <div class="item">
-                进行文件安全校验？
+                想 P2P 传输文件？
                 <MudChip Variant="Variant.Text" Class="mt-2" Color="Color.Warning">开发中</MudChip>
             </div>
         </div>

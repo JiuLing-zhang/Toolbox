@@ -14,7 +14,7 @@
 @inject IHttpClientFactory HttpClientFactory;
 @inject NavigationManager NavigationManager
 
-<PageTitle>码术 - 安全分析</PageTitle>
+<PageTitle>码术 - 文件分析</PageTitle>
 
 @if (_analysisRelust == null)
 {
@@ -183,7 +183,7 @@ else
         ApiResult<AnalysisRelust>? apiResult = null;
         try
         {
-            apiResult = await HttpClientFactory.CreateClient("WebAPI").GetFromJsonAsync<ApiResult<AnalysisRelust>>($"virustotal/file/{Hash}");
+            apiResult = await HttpClientFactory.CreateClient("VirusTotal").GetFromJsonAsync<ApiResult<AnalysisRelust>>($"virustotal/file/{Hash}");
         }
         catch (Exception ex)
         {
