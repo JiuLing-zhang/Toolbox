@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @inject IConfiguration Configuration
 @inject IDialogService DialogService
+@inject IHttpClientFactory HttpClientFactory;
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -21,20 +22,48 @@
             <MudMenu Label="下载客户端"
                      Color="Color.Inherit"
                      Dense="true"
+                     ActivationEvent="@MouseEvent.MouseOver"
                      AnchorOrigin="Origin.BottomCenter">
-                <MudMenuItem OnClick="@(()=>OnDownloadClick("tool-box_windows_1.0.4.5_7841.msix"))">
-                    <MudImage Class="mr-1" Src="@($"_content/Toolbox.Pages/images/windows.png")" Width="15" Height="15"></MudImage>
-                    Windows 平台
+                <MudMenuItem Class="d-flex align-center"
+                             Disabled="@(_windowsDownloadUrl.IsEmpty())">
+                    @if (_windowsDownloadUrl.IsEmpty())
+                    {
+                        <MudSkeleton />
+                    }
+                    else
+                    {
+                        <MudImage Class="mr-1"
+                                  Src="@($"_content/Toolbox.Pages/images/windows.png")"
+                                  Width="15"
+                                  Height="15"></MudImage>
+                        <MudLink Href="@(_windowsDownloadUrl)"
+                                 Style="color: #000000 !important;"
+                                 Underline="Underline.None">Windows 平台</MudLink>
+                    }
+
                 </MudMenuItem>
-                <MudMenuItem OnClick="@(()=>OnDownloadClick("tool-box_android_1.0.4.5_5677.apk"))">
-                    <MudImage Class="mr-1" Src="@($"_content/Toolbox.Pages/images/android.png")" Width="15" Height="15"></MudImage>
-                    Android 平台
+                <MudMenuItem Class="d-flex align-center"
+                             Disabled="@(_androidDownloadLink.IsEmpty())">
+                    @if (_androidDownloadLink.IsEmpty())
+                    {
+                        <MudSkeleton />
+                    }
+                    else
+                    {
+                        <MudImage Class="mr-1"
+                                  Src="@($"_content/Toolbox.Pages/images/android.png")"
+                                  Width="15"
+                                  Height="15"></MudImage>
+                        <MudLink Href="@(_androidDownloadLink)"
+                                 Style="color: #000000 !important;"
+                                 Underline="Underline.None">Android 平台</MudLink>
+                    }
                 </MudMenuItem>
             </MudMenu>
         }
         <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="false">
             <MudIcon Class="ml-5" Icon="@Icons.Material.Filled.TipsAndUpdates" />
-            <MudText Typo="Typo.subtitle1">人生苦短，用心写Bug</MudText>
+            <MudText Class="cursor-default" Typo="Typo.subtitle1">人生苦短，用心写Bug</MudText>
         </MudHidden>
         <MudIconButton Class="ml-3" Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/JiuLing-zhang" Target="_blank" />
     </MudAppBar>
@@ -56,20 +85,39 @@
 
 @code {
     bool open = true;
+    private string _windowsDownloadUrl = "";
+    private string _androidDownloadLink = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            if (!PlatformSettings.IsApp)
+            {
+                try
+                {
+                    var appKey = $"{Configuration["AppKey"]}";
+                    var tempType = (new { DownloadUrl = "" }).GetType();
+                    dynamic? windowsResult = await HttpClientFactory.CreateClient("WebAPI").GetFromJsonAsync($"app/check-update/{appKey}/windows", tempType);
+                    _windowsDownloadUrl = windowsResult?.DownloadUrl ?? "";
+                    _windowsDownloadUrl = _windowsDownloadUrl.Replace("http:", "").Replace("https:", "");
+
+                    dynamic? androidResult = await HttpClientFactory.CreateClient("WebAPI").GetFromJsonAsync($"app/check-update/{appKey}/android", tempType);
+                    _androidDownloadLink = androidResult?.DownloadUrl ?? "";
+                    _androidDownloadLink = _androidDownloadLink.Replace("http:", "").Replace("https:", "");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"APP 下载地址获取失败：{ex.Message}");
+                }
+            }
+        }
+    }
+
     void ToggleDrawer()
     {
         open = !open;
-    }
-
-    private async void OnDownloadClick(string fileName)
-    {
-        var result = await DialogService.ShowMessageBox("警告", "当前版本未集成自动更新模块，确认要下载吗？", "下载", "取消");
-        if (result == null || result == false)
-        {
-            return;
-        }
-        var url = $"{Configuration["WebAPIHost"]}/apps/{fileName}";
-        NavigationManager.NavigateTo(url);
     }
 
     private void GotoIndex()
