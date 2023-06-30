@@ -149,7 +149,7 @@ else
                         else if (platformResult.Category == "type-unsupported" || platformResult.Category == "timeout")
                         {
                             <MudIcon Icon="@Icons.Material.Outlined.NotInterested" Style="opacity:0.5;" />
-                            <div class="result" style="opacity:0.5;">已跳过</div>
+                            <div class="result" style="opacity:0.5;">文件类型不支持</div>
                         }
                         else if (platformResult.Category == "malicious")
                         {
@@ -160,7 +160,7 @@ else
                         }
                         else
                         {
-                            <MudText>未处理的数据</MudText>
+                            <div style="opacity:0.5;">未检测</div>
                         }
 
                     </div>
