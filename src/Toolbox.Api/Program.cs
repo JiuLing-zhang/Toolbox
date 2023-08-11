@@ -17,6 +17,7 @@ using System.Text.Unicode;
 using Toolbox.Api.Models;
 using Toolbox.Api.Middlewares;
 using Toolbox.Api.Factories;
+using Toolbox.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -26,6 +27,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
     options.JsonSerializerOptions.PropertyNamingPolicy = null;
 });
+builder.Services.AddSignalR();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -120,5 +122,6 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 app.MapControllers();
+app.MapHub<FileTransferHub>("/file-transfer-hub");
 app.UseCors();
 app.Run();

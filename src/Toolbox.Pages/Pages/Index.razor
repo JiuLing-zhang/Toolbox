@@ -34,10 +34,9 @@
         </div>
     </MudItem>
     <MudItem xs="12" md="6" Style="padding-left: 10%; padding-right: 10%;">
-        <div class="tile">
+        <div class="tile" @onclick="@(()=>DoNavigate("/file-transfer"))">
             <div class="item">
                 想 P2P 传输文件？
-                <MudChip Variant="Variant.Text" Class="mt-2" Color="Color.Warning">开发中</MudChip>
             </div>
         </div>
     </MudItem>
