@@ -1,14 +1,17 @@
 let dotNetHelper;
+let stunServer;
 let localConnection, remoteConnection;
 let localDataChannel, remoteDataChannel;
 
-async function initialization(dotNetHelperValue) {
+async function initialization(dotNetHelperValue, stunServerValue) {
     dotNetHelper = dotNetHelperValue;
+    stunServer = stunServerValue;
 }
 
 // 在客户端 A 中执行
 async function createSenderConnection() {
-    localConnection = new RTCPeerConnection();
+    const config = { iceServers: [{ urls: stunServer }] };
+    localConnection = new RTCPeerConnection(config);
     // 创建数据通道
     localDataChannel = localConnection.createDataChannel("dataChannel");
     // 监听 ICE candidate 事件
@@ -41,7 +44,8 @@ async function receiveAnswer(answer) {
 // 在客户端 B 中执行
 async function createReceiverConnection(offer) {
 
-    remoteConnection = new RTCPeerConnection();
+    const config = { iceServers: [{ urls: stunServer }] };
+    remoteConnection = new RTCPeerConnection(config);
 
     // 监听 ICE candidate 事件
     remoteConnection.onicecandidate = event => {

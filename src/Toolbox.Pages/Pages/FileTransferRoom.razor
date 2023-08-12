@@ -181,7 +181,7 @@
                 await InvokeAsync(StateHasChanged);
             });
             await hubConnection.StartAsync();
-            await JSRuntime.InvokeVoidAsync("initialization", objRef);
+            await JSRuntime.InvokeVoidAsync("initialization", objRef, Configuration["StunServer"]);
             if (RoomType == 1)
             {
                 _messages.Add("准备创建房间....");
