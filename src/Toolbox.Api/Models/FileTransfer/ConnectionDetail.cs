@@ -1,11 +1,11 @@
 ﻿namespace Toolbox.Api.Models.FileTransfer;
-public class ConnectionDetail
+internal class ConnectionDetail
 {
     public int RoomId { get; set; }
-    public ClientInfo Sender { get; set; }
-    public ClientInfo? Receiver { get; set; }
+    public SenderInfo Sender { get; set; }
+    public ReceiverInfo? Receiver { get; set; }
     public DateTime ExpirationTime { get; set; }
-    public ConnectionDetail(int roomId, ClientInfo sender, ClientInfo? receiver)
+    public ConnectionDetail(int roomId, SenderInfo sender, ReceiverInfo? receiver)
     {
         RoomId = roomId;
         Sender = sender;
@@ -15,13 +15,23 @@ public class ConnectionDetail
     }
 }
 
-public class ClientInfo
+internal class SenderInfo
 {
     public string Id { get; set; }
-    public string? SDPOffer { get; set; }
+    public string? Offer { get; set; }
     public string? Candidate { get; set; }
+    public SenderInfo(string id)
+    {
+        Id = id;
+    }
+}
 
-    public ClientInfo(string id)
+internal class ReceiverInfo
+{
+    public string Id { get; set; }
+    public string? Answer { get; set; }
+    public string? Candidate { get; set; }
+    public ReceiverInfo(string id)
     {
         Id = id;
     }

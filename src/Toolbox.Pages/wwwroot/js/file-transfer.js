@@ -144,10 +144,9 @@ function sendFileDataChunks(byteArray) {
         // 发送文件数据块
         const chunk = byteArray.slice(0, CHUNK_SIZE);
         localDataChannel.send(chunk);
-
         // 删除已发送的数据块
         byteArray = byteArray.slice(CHUNK_SIZE);
-
+        dotNetHelper.invokeMethodAsync('FileSending', byteArray.length);
 
         if (byteArray.length > 0) {
             setTimeout(() => {
@@ -157,6 +156,7 @@ function sendFileDataChunks(byteArray) {
         } else {
             // 文件数据已发送完成
             localDataChannel.send(fileSent);
+            dotNetHelper.invokeMethodAsync('FileSent');
         }
     }
 }
