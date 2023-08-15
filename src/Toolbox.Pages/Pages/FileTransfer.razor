@@ -19,8 +19,8 @@
             <MudButtonGroup Color="Color.Info"
                             Class="mt-4"
                             Variant="Variant.Filled">
-                <MudButton OnClick="@(async () => await GotoCreateRoomPageAsync(1))">创建</MudButton>
-                <MudButton OnClick="@(async () => await GotoCreateRoomPageAsync(0))">加入</MudButton>
+                <MudButton OnClick="@(async () => await GotoSenderPageAsync())">创建</MudButton>
+                <MudButton OnClick="@(async () => await GotoReceiverPageAsync())">加入</MudButton>
             </MudButtonGroup>
         </MudPaper>
     </MudContainer>
@@ -28,16 +28,32 @@
 @code
 {
     public string RoomId { get; set; } = JiuLing.CommonLibs.RandomUtils.GetOneByLength(6);
-    private Task GotoCreateRoomPageAsync(int roomType)
+    private async Task GotoSenderPageAsync()
+    {
+        if (await CheckRoomIdAsync())
+        {
+            NavigationManager.NavigateTo($"/file-transfer/sender/{RoomId}");
+        }
+    }
+    private async Task GotoReceiverPageAsync()
+    {
+        if (await CheckRoomIdAsync())
+        {
+            NavigationManager.NavigateTo($"/file-transfer/receiver/{RoomId}");
+        }
+    }
+
+    private Task<bool> CheckRoomIdAsync()
     {
         int roomId;
-        if (int.TryParse(RoomId, out roomId))
+        if (!int.TryParse(RoomId, out roomId))
         {
-            if (roomId >= 100000 && roomId <= 999999)
-            {
-                NavigationManager.NavigateTo($"/file-transfer/{roomType}/{RoomId}");
-            }
+            return Task.FromResult(false);
         }
-        return Task.CompletedTask;
+        if (roomId < 100000 || roomId > 999999)
+        {
+            return Task.FromResult(false);
+        }
+        return Task.FromResult(true);
     }
 }

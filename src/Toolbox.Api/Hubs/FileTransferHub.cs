@@ -64,13 +64,13 @@ public class FileTransferHub : Hub
             Connections.First(x => x.RoomId == roomId).Receiver = receiver;
         }
         await Clients.Client(Context.ConnectionId).SendAsync("ReceiveOffer", senderOffer);
-        await Clients.Client(Context.ConnectionId).SendAsync("ReceiveIceCandidate", candidate);
+        await Clients.Client(Context.ConnectionId).SendAsync("ReceiveSenderIceCandidate", candidate);
 
         return (new ApiResponse(0, "进入成功")).ToJson();
     }
 
-    [HubMethodName("SendIceCandidate")]
-    public async Task<string> SendIceCandidateAsync(int roomId, int roomType, string candidate)
+    [HubMethodName("SendSenderIceCandidate")]
+    public async Task<string> SendSenderIceCandidateAsync(int roomId, string candidate)
     {
         string anotherId = "";
         lock (Locker)
@@ -81,42 +81,52 @@ public class FileTransferHub : Hub
                 return (new ApiResponse(1, "房间号不存在")).ToJson();
             }
 
-            if (roomType == 1)
+            //发送者
+            if (connection.Sender.Id != Context.ConnectionId)
             {
-                //发送者
-                if (connection.Sender.Id != Context.ConnectionId)
-                {
-                    return (new ApiResponse(2, "链接标识校验失败")).ToJson();
-                }
-                if (connection.Sender.Candidate != null)
-                {
-                    return (new ApiResponse(3, "链接已被创建")).ToJson();
-                }
-                connection.Sender.Candidate = candidate;
+                return (new ApiResponse(2, "链接标识校验失败")).ToJson();
             }
-            else if (roomType == 0)
+            if (connection.Sender.Candidate != null)
             {
-                //接收者
-                if (connection.Receiver == null)
-                {
-                    return (new ApiResponse(4, "请先加入房间")).ToJson();
-                }
-                if (connection.Receiver.Id != Context.ConnectionId)
-                {
-                    return (new ApiResponse(5, "链接标识校验失败")).ToJson();
-                }
-                if (connection.Receiver.Candidate != null)
-                {
-                    return (new ApiResponse(6, "链接已被创建")).ToJson();
-                }
-                connection.Receiver.Candidate = candidate;
-                anotherId = connection.Sender.Id;
+                return (new ApiResponse(3, "链接已被创建")).ToJson();
             }
+            connection.Sender.Candidate = candidate;
+        }
+
+        return (new ApiResponse(0, "成功")).ToJson();
+    }
+
+    [HubMethodName("SendReceiverIceCandidate")]
+    public async Task<string> SendReceiverIceCandidateAsync(int roomId, string candidate)
+    {
+        string anotherId = "";
+        lock (Locker)
+        {
+            var connection = Connections.FirstOrDefault(x => x.RoomId == roomId);
+            if (connection == null)
+            {
+                return (new ApiResponse(1, "房间号不存在")).ToJson();
+            }
+            //接收者
+            if (connection.Receiver == null)
+            {
+                return (new ApiResponse(4, "请先加入房间")).ToJson();
+            }
+            if (connection.Receiver.Id != Context.ConnectionId)
+            {
+                return (new ApiResponse(5, "链接标识校验失败")).ToJson();
+            }
+            if (connection.Receiver.Candidate != null)
+            {
+                return (new ApiResponse(6, "链接已被创建")).ToJson();
+            }
+            connection.Receiver.Candidate = candidate;
+            anotherId = connection.Sender.Id;
         }
 
         if (anotherId.IsNotEmpty())
         {
-            await Clients.Client(anotherId).SendAsync("ReceiveIceCandidate", candidate);
+            await Clients.Client(anotherId).SendAsync("ReceiveReceiverIceCandidate", candidate);
         }
         return (new ApiResponse(0, "成功")).ToJson();
     }

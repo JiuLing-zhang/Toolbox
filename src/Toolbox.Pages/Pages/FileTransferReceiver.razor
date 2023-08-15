@@ -1,0 +1,218 @@
+﻿@page "/file-transfer/receiver/{RoomId:int}"
+@using Microsoft.Extensions.Configuration
+@using Microsoft.AspNetCore.SignalR.Client
+@using Toolbox.Pages.Enums
+@using Toolbox.Pages.HashCheckService
+@using Toolbox.Pages.Models
+@using Toolbox.Pages.Shared.Dialogs
+
+@inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
+@inject IHttpClientFactory HttpClientFactory;
+@inject NavigationManager NavigationManager
+@inject IDialogService Dialog
+@inject NavigationManager Navigation
+@inject HashServiceFactory HashServiceFactory;
+
+<PageTitle>码术 - 文件传输</PageTitle>
+
+<DialogLoading IsVisible="@_isLoading" ContentText="@_loadingMessage"></DialogLoading>
+
+<MudPaper Width="100%" Elevation="0">
+    <MudContainer MaxWidth="MaxWidth.Small">
+        <MudPaper Width="100%"
+                  Elevation="0"
+                  Height="180px"
+                  Square="true"
+                  Class="pa-5 mt-10 d-flex flex-column align-center">
+
+            @if (_fileReceiveName.IsEmpty())
+            {
+                <MudText>等待传输....</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption">正在接收</MudText>
+                <MudText Typo="Typo.overline" Class="mt-1">@_fileReceiveName</MudText>
+
+                <MudProgressLinear Striped="true"
+                                   Color="Color.Info"
+                                   Size="Size.Large"
+                                   Value="@_fileReceiveProgress"
+                                   Class="mt-3">
+                    <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                        <b>@($"{Convert.ToInt32(_fileReceiveProgress)}%")</b>
+                    </MudText>
+                </MudProgressLinear>
+            }
+            <MudButton Class="mt-5"
+                       Disabled="@(!_isFileReceived)"
+                       Variant="Variant.Filled"
+                       Color="Color.Info"
+                       OnClick="@(async () => await DownloadFileAsync())">下载</MudButton>
+
+        </MudPaper>
+
+        <MudPaper Width="100%"
+                  Elevation="0"
+                  Square="true"
+                  Class="pa-5">
+
+            <MudList Clickable="false" Dense="true" DisableGutters="false">
+                @foreach (var message in _messages)
+                {
+                    <MudListItem Text="@(message)" />
+                }
+            </MudList>
+
+        </MudPaper>
+    </MudContainer>
+</MudPaper>
+
+@code
+{
+    [Parameter]
+    public int RoomId { get; set; }
+
+    private bool _isLoading = false;
+    private string _loadingMessage = "";
+
+    private bool _isConnected = false;
+
+    private HubConnection? hubConnection;
+    private DotNetObjectReference<FileTransferReceiver> objRef;
+
+    private int _receivingFileLength = 0;
+    private bool _isFileReceived = false;
+
+
+    private string _fileReceiveName = "";
+    private string _fileReceiveSHA1 = "";
+    private int _fileReceiveSize;
+    private double _fileReceiveProgress => ((double)_receivingFileLength / _fileReceiveSize) * 100;
+
+    private static readonly string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-10";
+    private string _dragClass = DefaultDragClass;
+
+    private readonly List<string> _messages = new List<string>();
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            if (RoomId < 100000 || RoomId > 999999)
+            {
+                throw new ArgumentException("非法请求");
+            }
+
+            _messages.Add($"准备初始化房间({RoomId})....");
+            objRef = DotNetObjectReference.Create(this);
+
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl($"{Configuration["WebAPIHost"]}/file-transfer-hub")
+                .Build();
+
+            hubConnection.On<string>("ReceiveSenderIceCandidate", async (candidate) =>
+            {
+                _messages.Add("收到发送方候选人信息");
+                await InvokeAsync(StateHasChanged);
+                await JSRuntime.InvokeVoidAsync("receiveIceCandidate", candidate);
+            });
+
+            hubConnection.On<string>("ReceiveOffer", async (offer) =>
+            {
+                _messages.Add("收到网络通道请求指令");
+                await InvokeAsync(StateHasChanged);
+                await JSRuntime.InvokeVoidAsync("createReceiverConnection", offer);
+            });
+
+            await hubConnection.StartAsync();
+            await JSRuntime.InvokeVoidAsync("initialization", objRef, Configuration["StunServer"]);
+
+            _messages.Add("准备进入房间....");
+            var json = await hubConnection.InvokeAsync<string>("JoinRoom", RoomId);
+            var result = json.ToObject<ApiResult>();
+            if (result is not { Code: 0 })
+            {
+                _messages.Add($"进入房间失败：{result?.Message ?? "连接服务器失败"}");
+                return;
+            }
+            _messages.Add("进入房间成功");
+            await InvokeAsync(StateHasChanged);
+
+        }
+        catch (Exception ex)
+        {
+            await Dialog.ShowMessageBox("提示", ex.Message, yesText: "确定");
+            NavigationManager.NavigateTo($"/file-transfer");
+        }
+    }
+
+    [JSInvokable]
+    public async Task SendIceCandidateToServer(string candidate)
+    {
+        _messages.Add("准备发送候选人信息....");
+        await hubConnection.InvokeAsync<string>("SendReceiverIceCandidate", RoomId, candidate);
+    }
+
+    [JSInvokable]
+    public async Task SendAnswerToServer(string answer)
+    {
+        _messages.Add("准备发送网络通道响应指令....");
+        await hubConnection.InvokeAsync<string>("SendAnswer", RoomId, answer);
+        //接收端准备就绪
+        _isConnected = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task FileReceiving(int length)
+    {
+        _receivingFileLength = length;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task FileInfoReceived(string fileInfo)
+    {
+        var fileInfoObj = fileInfo.ToObject<FileTransferInfo>();
+        if (fileInfoObj == null)
+        {
+            _messages.Add("文件元数据不完整");
+            return;
+        }
+
+        _fileReceiveName = fileInfoObj.FileName;
+        _fileReceiveSHA1 = fileInfoObj.SHA1;
+        _fileReceiveSize = fileInfoObj.FileSize;
+        _messages.Add($"收到文件元数据：");
+        _messages.Add($"文件名：{fileInfoObj.FileName}");
+        _messages.Add($"大小：{fileInfoObj.FileSize}");
+        _messages.Add($"校验值：{fileInfoObj.SHA1}");
+        _messages.Add("准备接收文件....");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task FileReceived(string sha1)
+    {
+        _messages.Add("文件接收完成");
+        if (_fileReceiveSHA1 != sha1)
+        {
+            _messages.Add("接收失败：文件内容有缺失");
+            return;
+        }
+        _isFileReceived = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DownloadFileAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("saveByteArrayToFile", _fileReceiveName);
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+}
