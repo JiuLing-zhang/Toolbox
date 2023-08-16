@@ -13,7 +13,13 @@ async function createSenderConnection() {
     const config = { iceServers: [{ urls: stunServer }] };
     localConnection = new RTCPeerConnection(config);
     // 创建数据通道
-    localDataChannel = localConnection.createDataChannel("dataChannel");
+    let dataChannelOptions = {
+        ordered: true, //保证到达顺序
+    };
+    localDataChannel = localConnection.createDataChannel("dataChannel", dataChannelOptions);
+    localDataChannel.onopen = dataChannelStateChange;
+    localDataChannel.onclose = dataChannelStateChange;
+
     // 监听 ICE candidate 事件
     localConnection.onicecandidate = event => {
         if (event.candidate) {
@@ -28,6 +34,12 @@ async function createSenderConnection() {
 
     // 发送 SDP Offer 到信令服务器 
     dotNetHelper.invokeMethodAsync('SendOfferToServer', JSON.stringify(offer));
+}
+
+function dataChannelStateChange() {
+    if (localDataChannel.readyState === 'open') {
+        dotNetHelper.invokeMethodAsync('SenderConnected');
+    }
 }
 
 // 客户端 A 使用接收到的 SDP answer 设置远程描述
@@ -94,7 +106,7 @@ function receiveIceCandidate(candidate) {
 }
 
 function handleDataChannelOpen() {
-    console.log("Data channel opened.");
+    dotNetHelper.invokeMethodAsync('ReceiverConnected');
 }
 
 let readyToSendKey = "ReadyToSend";
@@ -110,16 +122,14 @@ function receiveFileData(event) {
             //收到元数据
             dotNetHelper.invokeMethodAsync('FileInfoReceived', fileInfo);
         } else if (receivedData == fileSent) {
-            // 在 receivedByteArray 中就是完整文件的字节数组
-            // 可以将 receivedByteArray 传递给 Blazor 或进行其他处理
             let sha1 = GetFileSHA1(new Uint8Array(receivedByteArray));
-            dotNetHelper.invokeMethodAsync('FileReceived', sha1);
+            dotNetHelper.invokeMethodAsync('FileReceivedWithWebRTC', sha1);
         }
 
     } else {
         // 将接收到的数据追加到字节数组中
         receivedByteArray = [...receivedByteArray, ...new Uint8Array(receivedData)];
-        dotNetHelper.invokeMethodAsync('FileReceiving', receivedByteArray.length);
+        dotNetHelper.invokeMethodAsync('FileReceivingWithWebRTC', receivedByteArray.length);
     }
 }
 
@@ -133,37 +143,32 @@ function sendFile(fileArray) {
 }
 
 const CHUNK_SIZE = 16384; // 每个数据块的大小
-const SEND_INTERVAL = 50; // 每个数据块发送间隔（毫秒）
-
-// 发送文件数据块
-let sending = false;
-
+const SEND_INTERVAL = 20; // 每个数据块发送间隔（毫秒）
 function sendFileDataChunks(byteArray) {
-    if (!sending) {
-        sending = true;
-        // 发送文件数据块
-        const chunk = byteArray.slice(0, CHUNK_SIZE);
-        localDataChannel.send(chunk);
-        // 删除已发送的数据块
-        byteArray = byteArray.slice(CHUNK_SIZE);
-        dotNetHelper.invokeMethodAsync('FileSending', byteArray.length);
+    // 发送文件数据块
+    const chunk = byteArray.slice(0, CHUNK_SIZE);
+    localDataChannel.send(chunk);
+    // 删除已发送的数据块
+    byteArray = byteArray.slice(CHUNK_SIZE);
+    dotNetHelper.invokeMethodAsync('FileSending', byteArray.length);
 
-        if (byteArray.length > 0) {
-            setTimeout(() => {
-                sending = false;
-                sendFileDataChunks(byteArray);
-            }, SEND_INTERVAL);
-        } else {
-            // 文件数据已发送完成
-            localDataChannel.send(fileSent);
-            dotNetHelper.invokeMethodAsync('FileSent');
-        }
+    if (byteArray.length > 0) {
+        setTimeout(() => {
+            sendFileDataChunks(byteArray);
+        }, SEND_INTERVAL);
+    } else {
+        // 文件数据已发送完成
+        localDataChannel.send(fileSent);
+        dotNetHelper.invokeMethodAsync('FileSent');
     }
 }
 
 function saveByteArrayToFile(fileName) {
-    const blob = new Blob([new Uint8Array(receivedByteArray)], { type: 'application/octet-stream' });
+    saveToFileWithBufferAndName(fileName, new Uint8Array(receivedByteArray))
+}
 
+function saveToFileWithBufferAndName(fileName, buffer) {
+    const blob = new Blob([buffer], { type: 'application/octet-stream' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = fileName;

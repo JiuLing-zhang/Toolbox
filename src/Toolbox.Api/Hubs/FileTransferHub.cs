@@ -1,5 +1,6 @@
 ﻿using JiuLing.CommonLibs.ExtensionMethods;
 using Microsoft.AspNetCore.SignalR;
+using System;
 using Toolbox.Api.Models;
 using Toolbox.Api.Models.FileTransfer;
 
@@ -176,4 +177,59 @@ public class FileTransferHub : Hub
         return (new ApiResponse(0, "成功")).ToJson();
     }
 
+    [HubMethodName("SwitchConnectionType")]
+    public async Task<string> SwitchConnectionTypeAsync(int roomId)
+    {
+        string receiverId;
+        lock (Locker)
+        {
+            var connection = Connections.FirstOrDefault(x => x.RoomId == roomId);
+            if (connection == null)
+            {
+                return (new ApiResponse(1, "房间号不存在")).ToJson();
+            }
+            if (connection.Sender.Id != Context.ConnectionId)
+            {
+                return (new ApiResponse(2, "链接标识校验失败")).ToJson();
+            }
+            if (connection.Receiver == null)
+            {
+                return (new ApiResponse(3, "接收方未初始化完成")).ToJson();
+            }
+            receiverId = connection.Receiver.Id;
+        }
+        await Clients.Client(receiverId).SendAsync("ReceiveSwitchConnectionType");
+        return (new ApiResponse(0, "成功")).ToJson();
+    }
+
+    [HubMethodName("SendFileInfo")]
+    public async Task SendFileInfoAsync(string fileInfo)
+    {
+        string receiverId = Connections.FirstOrDefault(x => x.Sender.Id == Context.ConnectionId).Receiver?.Id ?? "";
+        if (receiverId.IsNotEmpty())
+        {
+            await Clients.Client(receiverId).SendAsync("ReceiveFileInfo", fileInfo);
+        }
+    }
+
+    [HubMethodName("SendFile")]
+    public async Task SendFileAsync(byte[] buffer)
+    {
+        string receiverId = Connections.FirstOrDefault(x => x.Sender.Id == Context.ConnectionId).Receiver?.Id ?? "";
+        if (receiverId.IsNotEmpty())
+        {
+            await Clients.Client(receiverId).SendAsync("ReceiveFile", buffer);
+        }
+    }
+
+    [HubMethodName("SendFileSent")]
+    public async Task SendFileSentAsync()
+    {
+        string receiverId = Connections.FirstOrDefault(x => x.Sender.Id == Context.ConnectionId).Receiver?.Id ?? "";
+        if (receiverId.IsNotEmpty())
+        {
+            await Clients.Client(receiverId).SendAsync("ReceiveFileSent");
+        }
+    }
+     
 }
