@@ -8,52 +8,50 @@
     <MudContainer MaxWidth="MaxWidth.Small">
         <MudPaper Width="100%"
                   Square="true"
-                  Class="pa-5 mt-10 d-flex flex-column align-center">
-            <MudText>点对点文件传输</MudText>
+                  Elevation="0"
+                  Class="pa-5 mt-10">
+            <MudText Style="text-align: center;">文件传输</MudText>
 
-            <MudTextField @bind-Value="RoomId"
-                          Class="mt-10"
-                          T="string"
-                          Label="请输入6位数字的房间号"
-                          Variant="Variant.Text" />
-            <MudButtonGroup Color="Color.Info"
-                            Class="mt-4"
-                            Variant="Variant.Filled">
-                <MudButton OnClick="@(async () => await GotoSenderPageAsync())">创建</MudButton>
-                <MudButton OnClick="@(async () => await GotoReceiverPageAsync())">加入</MudButton>
-            </MudButtonGroup>
+            <MudCard Class="mt-10">
+                <MudCardContent>
+                    <MudText Typo="Typo.body2">需要发送文件？</MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Info"
+                               OnClick="@(async () => await GotoSenderPageAsync())">创建房间</MudButton>
+                </MudCardActions>
+            </MudCard>
+
+            <MudCard Class="mt-5">
+                <MudCardContent>
+                    <MudText Typo="Typo.body2">需要接收文件？</MudText>
+                </MudCardContent>
+                <MudCardActions>
+
+                    <MudTextField @bind-Value="RoomId"
+                                  Label="请输入对方房间号连接"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.End"
+                                  AdornmentIcon="@Icons.Material.Filled.JoinInner"
+                                  AdornmentColor="Color.Info"
+                                  OnAdornmentClick="@(async () => await GotoReceiverPageAsync())" />
+                </MudCardActions>
+            </MudCard>
         </MudPaper>
     </MudContainer>
 </MudPaper>
 @code
 {
-    public string RoomId { get; set; } = JiuLing.CommonLibs.RandomUtils.GetOneByLength(6);
-    private async Task GotoSenderPageAsync()
+    public string? RoomId { get; set; }
+    private Task GotoSenderPageAsync()
     {
-        if (await CheckRoomIdAsync())
-        {
-            NavigationManager.NavigateTo($"/file-transfer/sender/{RoomId}");
-        }
+        NavigationManager.NavigateTo($"/file-transfer/sender");
+        return Task.CompletedTask;
     }
-    private async Task GotoReceiverPageAsync()
+    private Task GotoReceiverPageAsync()
     {
-        if (await CheckRoomIdAsync())
-        {
-            NavigationManager.NavigateTo($"/file-transfer/receiver/{RoomId}");
-        }
-    }
-
-    private Task<bool> CheckRoomIdAsync()
-    {
-        int roomId;
-        if (!int.TryParse(RoomId, out roomId))
-        {
-            return Task.FromResult(false);
-        }
-        if (roomId < 100000 || roomId > 999999)
-        {
-            return Task.FromResult(false);
-        }
-        return Task.FromResult(true);
+        NavigationManager.NavigateTo($"/file-transfer/receiver/{RoomId}");
+        return Task.CompletedTask;
     }
 }

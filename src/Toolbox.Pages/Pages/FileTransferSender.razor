@@ -1,17 +1,15 @@
-﻿@page "/file-transfer/sender/{RoomId:int}"
+﻿@page "/file-transfer/sender"
 @using Microsoft.Extensions.Configuration
 @using Microsoft.AspNetCore.SignalR.Client
 @using Toolbox.Pages.Enums
 @using Toolbox.Pages.HashCheckService
 @using Toolbox.Pages.Models
 @using Toolbox.Pages.Shared.Dialogs
+@using System.Text.Json
 
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
-@inject IHttpClientFactory HttpClientFactory
-@inject NavigationManager NavigationManager
 @inject IDialogService Dialog
-@inject NavigationManager Navigation
 @inject HashServiceFactory HashServiceFactory
 
 <PageTitle>码术 - 文件传输</PageTitle>
@@ -22,211 +20,194 @@
     <MudContainer MaxWidth="MaxWidth.Small">
         <MudPaper Width="100%"
                   Elevation="0"
-                  Height="180px"
-                  Square="true"
-                  Class="pa-5 mt-10 d-flex flex-column align-center">
-
-            @if (_connectionType == ConnectionTypeEnum.None)
-            {
-
-                if (!_isReceiverJoined)
-                {
-                    <MudText Typo="@Typo.caption" Class="mb-2">等待接收方进入....</MudText>
-                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-                }
-                else
-                {
-                    <MudText Typo="@Typo.caption" Class="mb-2">正在连接....</MudText>
-                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-                    <div class="mt-2">
-                        无法连接？使用
-                        <MudElement HtmlTag="a"
-                                    Class="ma-0 cursor-pointer"
-                                    Style="color:var(--mud-palette-primary);font-weight:bold;"
-                                    onclick="@EnableServiceRelay"
-                                    rel="noopener noreferrer">
-                            服务器中转
-                        </MudElement>
-                        发送
-                    </div>
-                }
-            }
-            else
-            {
-                if (_fileSentProgress == 0)
-                {
-                    <MudFileUpload T="IBrowserFile" OnFilesChanged="OnInputFileChanged" Hidden="false" Class="flex-1" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
-                    @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
-                        <ButtonTemplate>
-                            @if (_fileSendName.IsEmpty())
-                            {
-                                <MudPaper Height="80px" Outlined="true" Class="@_dragClass">
-                                    <MudText Typo="Typo.h6">
-                                        点击这里选择文件 或 拖拽文件到该区域
-                                    </MudText>
-                                </MudPaper>
-                            }
-                            else
-                            {
-                                <MudPaper Height="80px" Outlined="true" Class="relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-30">
-                                    <MudChip Color="Color.Dark"
-                                             Text="@_fileSendName" />
-                                </MudPaper>
-                            }
-                        </ButtonTemplate>
-                    </MudFileUpload>
-
-                    <MudButton Class="mt-5"
-                               Disabled="@(!_isAllowSend)"
-                               Variant="Variant.Filled"
-                               Color="Color.Info"
-                               OnClick="@(async () => await SendFileAsync())">发送</MudButton>
-                }
-                else
-                {
-                    switch (_connectionType)
-                    {
-                        case ConnectionTypeEnum.WebRTC:
-                            <MudText Typo="@Typo.caption">点对点发送</MudText>
-                            break;
-                        case ConnectionTypeEnum.ServiceRelay:
-                            <MudText Typo="@Typo.caption">服务器中转发送</MudText>
-                            break;
-                    }
-                    <MudText Typo="Typo.overline" Class="mt-1">@_fileSendName</MudText>
-
-                    <MudProgressLinear Striped="true"
-                                       Color="Color.Info"
-                                       Size="Size.Large"
-                                       Value="@_fileSentProgress"
-                                       Class="mt-3">
-                        <MudText Typo="Typo.subtitle1" Color="Color.Dark">
-                            <b>@($"{Convert.ToInt32(_fileSentProgress)}%")</b>
-                        </MudText>
-                    </MudProgressLinear>
-                }
-            }
-
-        </MudPaper>
-
-        <MudPaper Width="100%"
-                  Elevation="0"
                   Square="true"
                   Class="pa-5">
 
-            <MudList Clickable="false" Dense="true" DisableGutters="false">
-                @foreach (var message in _messages)
-                {
-                    <MudListItem Text="@(message)" />
-                }
-            </MudList>
+            @if (_roomId == 0)
+            {
+                <div class="d-flex align-center">
+                    <MudProgressCircular Color="Color.Primary"
+                                         Indeterminate="true"
+                                         Size="Size.Small" />
+                    <MudText Typo="@Typo.caption" Class="ml-2">正在创建房间....</MudText>
+                </div>
+            }
+            else
+            {
+                <MudField Label=""
+                          Class="mb-8"
+                          Variant="Variant.Text"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.CheckCircle"
+                          AdornmentColor="Color.Success">@($"房间号 {_roomId}")</MudField>
 
+                if (_connectionType == ConnectionTypeEnum.None)
+                {
+                    if (!_isReceiverJoined)
+                    {
+                        <div class="d-flex align-center">
+                            <MudProgressCircular Color="Color.Primary"
+                                                 Indeterminate="true"
+                                                 Size="Size.Small" />
+                            <MudText Typo="@Typo.caption" Class="ml-2">等待接收方进入....</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-center">
+                            <MudProgressCircular Color="Color.Primary"
+                                                 Indeterminate="true"
+                                                 Size="Size.Small" />
+                            <MudText Typo="@Typo.caption" Class="ml-2">正在连接....</MudText>
+                        </div>
+
+                        <div class="mt-5" style="font-size: 12px;opacity: 0.9;">
+                            无法连接？使用
+                            <MudElement HtmlTag="a"
+                                        Class="ma-0 cursor-pointer"
+                                        Style="color:var(--mud-palette-primary);font-weight:bold;opacity: 1;"
+                                        onclick="@EnableServiceRelay"
+                                        rel="noopener noreferrer">
+                                服务器中转
+                            </MudElement>
+                            发送
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="d-flex align-center justify-space-between mb-2">
+                        @switch (_connectionType)
+                        {
+                            case ConnectionTypeEnum.WebRTC:
+                                <div class="mt-2" style="opacity: 0.8;font-size: 12px;">本次使用 点对点发送</div>
+                                break;
+                            case ConnectionTypeEnum.ServiceRelay:
+                                <div class="mt-2" style="opacity: 0.8;font-size: 12px;">本次使用 服务器中转发送</div>
+                                break;
+                        }
+
+                        <MudFileUpload Class="mr-3"
+                                       T="IBrowserFile"
+                                       OnFilesChanged="OnInputFileChanged">
+                            <ButtonTemplate>
+                                <MudButton HtmlTag="label"
+                                           Variant="Variant.Text"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           StartIcon="@Icons.Material.Filled.FileUpload"
+                                           for="@context">
+                                    添加文件
+                                </MudButton>
+                            </ButtonTemplate>
+                        </MudFileUpload>
+                    </div>
+
+                    foreach (var file in _files)
+                    {
+                        <MudPaper Class="px-3 py-2">
+                            <div class="d-flex align-center justify-space-between">
+                                <MudText Typo="Typo.overline" Class="mt-1">@file.FileName</MudText>
+                                @switch (file.State)
+                                {
+                                    case FileTransferStateEnum.Init:
+                                        <MudLink Underline="@Underline.None"
+                                                 OnClick="@(() =>SendFileAsync(file.FileName))">发送</MudLink>
+                                        break;
+                                    case FileTransferStateEnum.Sending:
+                                        <MudLink Disabled="@true">发送中</MudLink>
+                                        break;
+                                    case FileTransferStateEnum.Sent:
+                                        <MudLink Disabled="@true">完成</MudLink>
+                                        break;
+                                }
+                            </div>
+                            <MudProgressLinear Striped="true"
+                                               Color="Color.Info"
+                                               Size="Size.Large"
+                                               Value="@file.Progress"
+                                               Class="mt-3">
+                                <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                                    <b>@($"{Convert.ToInt32(file.Progress)}%")</b>
+                                </MudText>
+                            </MudProgressLinear>
+                        </MudPaper>
+                    }
+                }
+            }
         </MudPaper>
     </MudContainer>
 </MudPaper>
 
 @code
 {
-    [Parameter]
-    public int RoomId { get; set; }
-
+    private int _roomId;
     private bool _isLoading = false;
     private string _loadingMessage = "";
 
     private bool _isReceiverJoined = false;
     private ConnectionTypeEnum _connectionType = ConnectionTypeEnum.None;
-    private bool _isAllowSend = false;
 
     private HubConnection _hub = null!;
     private DotNetObjectReference<FileTransferSender> _objRef = null!;
 
-    private string _fileSendName = "";
-    private byte[] _fileSendArray;
-    private string _fileSendSHA1 = "";
-    private int _fileSendSize => _fileSendArray.Length;
-
-    private double _fileSentProgress;
-
-    private static readonly string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-10";
-    private string _dragClass = DefaultDragClass;
-
-    private readonly List<string> _messages = new List<string>();
+    private readonly List<FileTransferInfo> _files = new List<FileTransferInfo>();
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        try
+        Console.WriteLine($"准备初始化房间....");
+        _objRef = DotNetObjectReference.Create(this);
+
+        _hub = new HubConnectionBuilder()
+            .WithUrl($"{Configuration["WebAPIHost"]}/file-transfer-hub")
+            .Build();
+
+
+        _hub.On("ReceiverJoin", async () =>
         {
-            if (RoomId < 100000 || RoomId > 999999)
-            {
-                throw new ArgumentException("非法请求");
-            }
-
-            Console.WriteLine($"准备初始化房间({RoomId})....");
-            _objRef = DotNetObjectReference.Create(this);
-
-            _hub = new HubConnectionBuilder()
-                .WithUrl($"{Configuration["WebAPIHost"]}/file-transfer-hub")
-                .Build();
-
-
-            _hub.On("ReceiverJoin", async () =>
-            {
-                Console.WriteLine("接收方进入");
-                _isReceiverJoined = true;
-                await InvokeAsync(StateHasChanged);
-                await JSRuntime.InvokeVoidAsync("createSenderConnection");
-            });
-
-            _hub.On<string>("ReceiveReceiverIceCandidate", async (candidate) =>
-            {
-                Console.WriteLine("收到接收方候选人信息");
-                await InvokeAsync(StateHasChanged);
-                await JSRuntime.InvokeVoidAsync("receiveIceCandidate", candidate);
-            });
-
-            _hub.On<string>("ReceiveAnswer", async (answer) =>
-            {
-                Console.WriteLine("收到网络通道响应指令");
-                await JSRuntime.InvokeVoidAsync("receiveAnswer", answer);
-                await InvokeAsync(StateHasChanged);
-            });
-            await _hub.StartAsync();
-
-            await JSRuntime.InvokeVoidAsync("initialization", _objRef, Configuration["StunServer"]);
-
-            _messages.Add($"准备创建房间，房间号 {RoomId}....");
-            var json = await _hub.InvokeAsync<string>("CreateRoom", RoomId);
-            var result = json.ToObject<ApiResult>();
-            if (result is not { Code: 0 })
-            {
-                _messages.Add($"房间创建失败：{result?.Message ?? "连接服务器失败"}");
-                return;
-            }
-            _messages.Add("房间创建成功");
-            Console.WriteLine("等待接收方进入....");
+            Console.WriteLine("接收方进入");
+            _isReceiverJoined = true;
             await InvokeAsync(StateHasChanged);
+            await JSRuntime.InvokeVoidAsync("createSenderConnection");
+        });
 
-        }
-        catch (Exception ex)
+        _hub.On<string>("ReceiveReceiverIceCandidate", async (candidate) =>
         {
-            await Dialog.ShowMessageBox("提示", ex.Message, yesText: "确定");
-            NavigationManager.NavigateTo($"/file-transfer");
-        }
+            Console.WriteLine("收到接收方候选人信息");
+            await InvokeAsync(StateHasChanged);
+            await JSRuntime.InvokeVoidAsync("receiveIceCandidate", candidate);
+        });
+
+        _hub.On<string>("ReceiveAnswer", async (answer) =>
+        {
+            Console.WriteLine("收到网络通道响应指令");
+            await JSRuntime.InvokeVoidAsync("receiveAnswer", answer);
+            await InvokeAsync(StateHasChanged);
+        });
+        await _hub.StartAsync();
+
+        await JSRuntime.InvokeVoidAsync("initialization", _objRef, Configuration["StunServer"]);
+
+        _roomId = await _hub.InvokeAsync<int>("CreateRoom");
+
+        Console.WriteLine("等待接收方进入....");
     }
 
     [JSInvokable]
     public async Task SendIceCandidateToServer(string candidate)
     {
         Console.WriteLine("准备发送候选人信息....");
-        await _hub.InvokeAsync<string>("SendSenderIceCandidate", RoomId, candidate);
+        var result = await _hub.InvokeAsync<string>("SendSenderIceCandidate", candidate);
+        Console.WriteLine($"服务器返回:{result}");
     }
 
     [JSInvokable]
     public async Task SendOfferToServer(string offer)
     {
         Console.WriteLine("准备发送网络通道请求指令....");
-        await _hub.InvokeAsync<string>("SendOffer", RoomId, offer);
+        var result = await _hub.InvokeAsync<string>("SendOffer", offer);
+        Console.WriteLine($"服务器返回:{result}");
     }
 
     [JSInvokable]
@@ -234,21 +215,19 @@
     {
         //发送端准备就绪
         _connectionType = ConnectionTypeEnum.WebRTC;
-        _messages.Add("点对点连接已建立");
         await InvokeAsync(StateHasChanged);
     }
 
     public async Task EnableServiceRelay()
     {
         _connectionType = ConnectionTypeEnum.ServiceRelay;
-        _messages.Add("启用服务器中转传输");
-        await _hub.InvokeAsync<string>("SwitchConnectionType", RoomId);
+        var result = await _hub.InvokeAsync<string>("SwitchConnectionType");
+        Console.WriteLine($"服务器返回:{result}");
         await InvokeAsync(StateHasChanged);
     }
 
     private async void OnInputFileChanged(InputFileChangeEventArgs e)
     {
-        ClearDragClass();
         long maxFileSize = 100000000;
         if (e.GetMultipleFiles()[0].Size >= maxFileSize)
         {
@@ -261,51 +240,59 @@
             Dialog.Show<DialogOk>("提示", parameters, options);
             return;
         }
-        await LoadingAsync("正在生成文件元数据...");
 
-        _fileSendName = e.GetMultipleFiles()[0].Name;
+        var fileName = e.GetMultipleFiles()[0].Name;
+        if (_files.Any(x => x.FileName == fileName))
+        {
+            var options = new DialogOptions()
+                {
+                    NoHeader = true
+                };
+            var parameters = new DialogParameters();
+            parameters.Add("ContentText", "不能重复添加文件");
+            Dialog.Show<DialogOk>("提示", parameters, options);
+            return;
+        }
+
+        await LoadingAsync("正在生成文件元数据...");
+        var file = new FileTransferInfo();
+        file.FileName = fileName;
         var ms = new MemoryStream();
         await e.GetMultipleFiles()[0].OpenReadStream(maxFileSize).CopyToAsync(ms);
-        _fileSendArray = ms.ToArray();
+        file.FileContext = ms.ToArray();
 
         var hashService = HashServiceFactory.Create(HashTypeEnum.SHA1);
-        _fileSendSHA1 = await hashService.ComputeHashAsync(_fileSendArray, false);
-        _isAllowSend = true;
+        file.SHA1 = await hashService.ComputeHashAsync(file.FileContext, false);
+
+        _files.Add(file);
         await LoadingCompletedAsync();
     }
-    private void SetDragClass()
+
+    private async Task SendFileAsync(string fileName)
     {
-        _dragClass = $"{DefaultDragClass} mud-border-primary";
-    }
+        if (_files.Any(x => x.State == FileTransferStateEnum.Sending))
+        {
+            var options = new DialogOptions()
+                {
+                    NoHeader = true
+                };
+            var parameters = new DialogParameters();
+            parameters.Add("ContentText", "不允许同时发送多个文件");
+            Dialog.Show<DialogOk>("提示", parameters, options);
+            return;
+        }
+        _files.First(x => x.FileName == fileName).State = FileTransferStateEnum.Sending;
+        var file = _files.First(x => x.FileName == fileName);
 
-    private void ClearDragClass()
-    {
-        _dragClass = DefaultDragClass;
-    }
-
-    private async Task SendFileAsync()
-    {
-        var fileInfo = new FileTransferInfo()
-            {
-                FileName = _fileSendName,
-                SHA1 = _fileSendSHA1,
-                FileSize = _fileSendSize
-            };
-
-        _messages.Add($"发送文件元数据：");
-        _messages.Add($"文件名：{fileInfo.FileName}");
-        _messages.Add($"大小：{fileInfo.FileSize}");
-        _messages.Add("准备发送文件....");
-
-
+        FileMetadata fileMetadata = file as FileMetadata;
         if (_connectionType == ConnectionTypeEnum.WebRTC)
         {
-            await JSRuntime.InvokeVoidAsync("sendFileInfo", fileInfo.ToJson());
-            await JSRuntime.InvokeVoidAsync("sendFile", _fileSendArray);
+            await JSRuntime.InvokeVoidAsync("sendFileInfo", JsonSerializer.Serialize(fileMetadata));
+            await JSRuntime.InvokeVoidAsync("sendFile", file.FileContext);
         }
         else if (_connectionType == ConnectionTypeEnum.ServiceRelay)
         {
-            await _hub.InvokeAsync("SendFileInfo", fileInfo.ToJson());
+            await _hub.InvokeAsync("SendFileInfo", JsonSerializer.Serialize(fileMetadata));
             await SendFileWithSignalRAsync();
         }
     }
@@ -313,38 +300,41 @@
     private int _chunkSize = 16384;
     private async Task SendFileWithSignalRAsync()
     {
+        var file = _files.First(x => x.State == FileTransferStateEnum.Sending);
         int totalBytesSent = 0;
 
-        for (int offset = 0; offset < _fileSendArray.Length; offset += _chunkSize)
+        for (int offset = 0; offset < file.FileContext.Length; offset += _chunkSize)
         {
-            int remainingBytes = _fileSendArray.Length - offset;
+            int remainingBytes = file.FileContext.Length - offset;
             int chunkToSend = Math.Min(_chunkSize, remainingBytes);
             byte[] chunk = new byte[chunkToSend];
-            Array.Copy(_fileSendArray, offset, chunk, 0, chunkToSend);
+            Array.Copy(file.FileContext, offset, chunk, 0, chunkToSend);
 
             await _hub.InvokeAsync("SendFile", chunk);
 
             totalBytesSent += chunkToSend;
-            _fileSentProgress = (double)totalBytesSent / _fileSendArray.Length * 100;
+            file.Progress = (double)totalBytesSent / file.FileContext.Length * 100;
 
             await InvokeAsync(StateHasChanged);
             await Task.Delay(20);
         }
         await _hub.InvokeAsync("SendFileSent");
-        _messages.Add("文件发送完成");
+        file.State = FileTransferStateEnum.Sent;
     }
 
     [JSInvokable]
     public async Task FileSending(int length)
     {
-        _fileSentProgress = ((double)(_fileSendSize - length) / _fileSendSize) * 100;
+        var file = _files.First(x => x.State == FileTransferStateEnum.Sending);
+        file.Progress = ((double)(file.FileContext.Length - length) / file.FileContext.Length) * 100;
         await InvokeAsync(StateHasChanged);
     }
 
     [JSInvokable]
     public async Task FileSent()
     {
-        await OnSendCompletedAsync();
+        _files.First(x => x.State == FileTransferStateEnum.Sending).State = FileTransferStateEnum.Sent;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadingAsync(string message)
@@ -360,11 +350,7 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnSendCompletedAsync()
-    {
-        _messages.Add("文件发送完成");
-        await InvokeAsync(StateHasChanged);
-    }
+
 
     public void Dispose()
     {

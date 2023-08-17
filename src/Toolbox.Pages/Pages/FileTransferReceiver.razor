@@ -20,21 +20,38 @@
     <MudContainer MaxWidth="MaxWidth.Small">
         <MudPaper Width="100%"
                   Elevation="0"
-                  Height="180px"
+                  Height="300px"
                   Square="true"
-                  Class="pa-5 mt-10 d-flex flex-column align-center">
+                  Class="pa-5">
+
+            <MudField Label=""
+                      Class="mb-8"
+                      Variant="Variant.Text"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@Icons.Material.Filled.CheckCircle"
+                      AdornmentColor="Color.Success">
+                @($"房间号 {RoomId}")
+            </MudField>
 
             @if (_connectionType == ConnectionTypeEnum.None)
             {
-                <MudText Typo="@Typo.caption" Class="mb-2">正在连接....</MudText>
-                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                <div class="d-flex align-center">
+                    <MudProgressCircular Color="Color.Primary"
+                                         Indeterminate="true"
+                                         Size="Size.Small" />
+                    <MudText Typo="@Typo.caption" Class="ml-2">正在连接....</MudText>
+                </div>
             }
             else
             {
                 if (_fileMetadata == null)
                 {
-                    <MudText Typo="@Typo.caption" Class="mb-2">等待发送文件....</MudText>
-                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                    <div class="d-flex align-center">
+                        <MudProgressCircular Color="Color.Primary"
+                                             Indeterminate="true"
+                                             Size="Size.Small" />
+                        <MudText Typo="@Typo.caption" Class="ml-2">等待发送文件....</MudText>
+                    </div>
                 }
                 else
                 {
@@ -95,8 +112,8 @@
     private string _loadingMessage = "";
     private ConnectionTypeEnum _connectionType = ConnectionTypeEnum.None;
 
-    private HubConnection? _hub;
-    private DotNetObjectReference<FileTransferReceiver>? _objRef;
+    private HubConnection _hub = null!;
+    private DotNetObjectReference<FileTransferReceiver> _objRef = null!;
 
     private bool _isFileReceived = false;
 
@@ -108,98 +125,85 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        try
+        Console.WriteLine($"准备初始化模块....");
+        _objRef = DotNetObjectReference.Create(this);
+
+        _hub = new HubConnectionBuilder()
+            .WithUrl($"{Configuration["WebAPIHost"]}/file-transfer-hub")
+            .Build();
+
+        _hub.On<string>("ReceiveSenderIceCandidate", async (candidate) =>
         {
-            if (RoomId < 100000 || RoomId > 999999)
-            {
-                throw new ArgumentException("非法请求");
-            }
+            Console.WriteLine("收到发送方候选人信息");
+            await InvokeAsync(StateHasChanged);
+            await JSRuntime.InvokeVoidAsync("receiveIceCandidate", candidate);
+        });
 
-            Console.WriteLine($"准备初始化房间({RoomId})....");
-            _objRef = DotNetObjectReference.Create(this);
-
-            _hub = new HubConnectionBuilder()
-                .WithUrl($"{Configuration["WebAPIHost"]}/file-transfer-hub")
-                .Build();
-
-            _hub.On<string>("ReceiveSenderIceCandidate", async (candidate) =>
+        _hub.On<string>("ReceiveOffer", async (offer) =>
+        {
+            Console.WriteLine("收到网络通道请求指令");
+            await InvokeAsync(StateHasChanged);
+            await JSRuntime.InvokeVoidAsync("createReceiverConnection", offer);
+        });
+        _hub.On("ReceiveSwitchConnectionType", async () =>
+        {
+            //切换服务器中转模式
+            _connectionType = ConnectionTypeEnum.ServiceRelay;
+            _messages.Add("启用服务器中转传输");
+            await InvokeAsync(StateHasChanged);
+        });
+        _hub.On<string>("ReceiveFileInfo", async (fileInfo) =>
+        {
+            await OnReceiveFileInfo(fileInfo);
+        });
+        _hub.On<byte[]>("ReceiveFile", async (buffer) =>
+        {
+            await OnFileReceivingAsync(buffer);
+        });
+        _hub.On("ReceiveFileSent", async () =>
+        {
+            _messages.Add("文件接收完成");
+            await LoadingAsync("正在校验文件");
+            var sha1 = await HashServiceFactory.Create(HashTypeEnum.SHA1).ComputeHashAsync(_fileBuffer.ToArray(), false);
+            await LoadingCompletedAsync();
+            if (_fileMetadata?.SHA1 != sha1)
             {
-                Console.WriteLine("收到发送方候选人信息");
-                await InvokeAsync(StateHasChanged);
-                await JSRuntime.InvokeVoidAsync("receiveIceCandidate", candidate);
-            });
-
-            _hub.On<string>("ReceiveOffer", async (offer) =>
-            {
-                Console.WriteLine("收到网络通道请求指令");
-                await InvokeAsync(StateHasChanged);
-                await JSRuntime.InvokeVoidAsync("createReceiverConnection", offer);
-            });
-            _hub.On("ReceiveSwitchConnectionType", async () =>
-            {
-                //切换服务器中转模式
-                _connectionType = ConnectionTypeEnum.ServiceRelay;
-                _messages.Add("启用服务器中转传输");
-                await InvokeAsync(StateHasChanged);
-            });
-            _hub.On<string>("ReceiveFileInfo", async (fileInfo) =>
-            {
-                await OnReceiveFileInfo(fileInfo);
-            });
-            _hub.On<byte[]>("ReceiveFile", async (buffer) =>
-            {
-                await OnFileReceivingAsync(buffer);
-            });
-            _hub.On("ReceiveFileSent", async () =>
-            {
-                _messages.Add("文件接收完成");
-                await LoadingAsync("正在校验文件");
-                var sha1 = await HashServiceFactory.Create(HashTypeEnum.SHA1).ComputeHashAsync(_fileBuffer.ToArray(), false);
-                await LoadingCompletedAsync();
-                if (_fileMetadata?.SHA1 != sha1)
-                {
-                    _messages.Add("接收失败：文件内容有缺失");
-                    return;
-                }
-                _messages.Add("文件校验通过");
-                _isFileReceived = true;
-                await InvokeAsync(StateHasChanged);
-            });
-
-            await _hub.StartAsync();
-            await JSRuntime.InvokeVoidAsync("initialization", _objRef, Configuration["StunServer"]);
-
-            _messages.Add($"准备进入房间，房间号 {RoomId}....");
-            var json = await _hub.InvokeAsync<string>("JoinRoom", RoomId);
-            var result = json.ToObject<ApiResult>();
-            if (result is not { Code: 0 })
-            {
-                _messages.Add($"进入房间失败：{result?.Message ?? "连接服务器失败"}");
+                _messages.Add("接收失败：文件内容有缺失");
                 return;
             }
-            _messages.Add("进入房间成功");
+            _messages.Add("文件校验通过");
+            _isFileReceived = true;
             await InvokeAsync(StateHasChanged);
+        });
 
-        }
-        catch (Exception ex)
+        await _hub.StartAsync();
+        await JSRuntime.InvokeVoidAsync("initialization", _objRef, Configuration["StunServer"]);
+
+        _messages.Add($"准备进入房间....");
+        var result = await _hub.InvokeAsync<string>("JoinRoom", RoomId);
+        if (result != "ok")
         {
-            await Dialog.ShowMessageBox("提示", ex.Message, yesText: "确定");
+            await Dialog.ShowMessageBox("提示", result, yesText: "确定");
             NavigationManager.NavigateTo($"/file-transfer");
+            return;
         }
+        _messages.Add("进入房间成功");
     }
 
     [JSInvokable]
     public async Task SendIceCandidateToServer(string candidate)
     {
         Console.WriteLine("准备发送候选人信息....");
-        await _hub.InvokeAsync<string>("SendReceiverIceCandidate", RoomId, candidate);
+        var result = await _hub.InvokeAsync<string>("SendReceiverIceCandidate", candidate);
+        Console.WriteLine($"服务器返回:{result}");
     }
 
     [JSInvokable]
     public async Task SendAnswerToServer(string answer)
     {
         Console.WriteLine("准备发送网络通道响应指令....");
-        await _hub.InvokeAsync<string>("SendAnswer", RoomId, answer);
+        var result = await _hub.InvokeAsync<string>("SendAnswer", answer);
+        Console.WriteLine($"服务器返回:{result}");
         await InvokeAsync(StateHasChanged);
     }
 
