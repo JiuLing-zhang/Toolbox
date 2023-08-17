@@ -12,6 +12,8 @@
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <link href="_content/MudBlazor.Markdown/MudBlazor.Markdown.min.css" rel="stylesheet" />
     <link href="Toolbox.Web.styles.css" rel="stylesheet" />
+    <link href="manifest.json" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon.png" />
 </head>
 
 <body>
@@ -35,6 +37,7 @@
     <script src="_content/Toolbox.Pages/js/crypto-js.js"></script>
     <script src="_content/Toolbox.Pages/js/crypto-js-inner.js"></script>
     <script src="_content/Toolbox.Pages/js/file-transfer.js"></script>
+    <script>navigator.serviceWorker.register('service-worker.js');</script>
 </body>
 
 </html>
