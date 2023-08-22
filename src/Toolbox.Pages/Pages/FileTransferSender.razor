@@ -80,10 +80,10 @@
                         @switch (_connectionType)
                         {
                             case ConnectionTypeEnum.WebRTC:
-                                <div class="mt-2" style="opacity: 0.8;font-size: 12px;">本次使用 点对点发送</div>
+                                <div class="mt-2" style="opacity: 0.8;font-size: 12px;">当前传输模式：点对点</div>
                                 break;
                             case ConnectionTypeEnum.ServiceRelay:
-                                <div class="mt-2" style="opacity: 0.8;font-size: 12px;">本次使用 服务器中转发送</div>
+                                <div class="mt-2" style="opacity: 0.8;font-size: 12px;">当前传输模式：服务器中转</div>
                                 break;
                         }
 
@@ -115,10 +115,10 @@
                                                  OnClick="@(() =>SendFileAsync(file.FileName))">发送</MudLink>
                                         break;
                                     case FileTransferStateEnum.Sending:
-                                        <MudLink Disabled="@true">发送中</MudLink>
+                                        <MudLink Disabled="true">发送中</MudLink>
                                         break;
                                     case FileTransferStateEnum.Sent:
-                                        <MudLink Disabled="@true">完成</MudLink>
+                                        <MudLink Disabled="true">完成</MudLink>
                                         break;
                                 }
                             </div>
@@ -259,10 +259,11 @@
         file.FileName = fileName;
         var ms = new MemoryStream();
         await e.GetMultipleFiles()[0].OpenReadStream(maxFileSize).CopyToAsync(ms);
-        file.FileContext = ms.ToArray();
-
+        var buffer = ms.ToArray();
+        file.FileContext = new List<byte>(buffer);
+        file.FileSize = buffer.Length;
         var hashService = HashServiceFactory.Create(HashTypeEnum.SHA1);
-        file.SHA1 = await hashService.ComputeHashAsync(file.FileContext, false);
+        file.SHA1 = await hashService.ComputeHashAsync(buffer, false);
 
         _files.Add(file);
         await LoadingCompletedAsync();
@@ -288,7 +289,7 @@
         if (_connectionType == ConnectionTypeEnum.WebRTC)
         {
             await JSRuntime.InvokeVoidAsync("sendFileInfo", JsonSerializer.Serialize(fileMetadata));
-            await JSRuntime.InvokeVoidAsync("sendFile", file.FileContext);
+            await JSRuntime.InvokeVoidAsync("sendFile", file.FileContext.ToArray());
         }
         else if (_connectionType == ConnectionTypeEnum.ServiceRelay)
         {
@@ -303,17 +304,17 @@
         var file = _files.First(x => x.State == FileTransferStateEnum.Sending);
         int totalBytesSent = 0;
 
-        for (int offset = 0; offset < file.FileContext.Length; offset += _chunkSize)
+        for (int offset = 0; offset < file.FileContext.Count; offset += _chunkSize)
         {
-            int remainingBytes = file.FileContext.Length - offset;
+            int remainingBytes = file.FileContext.Count - offset;
             int chunkToSend = Math.Min(_chunkSize, remainingBytes);
             byte[] chunk = new byte[chunkToSend];
-            Array.Copy(file.FileContext, offset, chunk, 0, chunkToSend);
+            file.FileContext.CopyTo(offset, chunk, 0, chunkToSend);
 
             await _hub.InvokeAsync("SendFile", chunk);
 
             totalBytesSent += chunkToSend;
-            file.Progress = (double)totalBytesSent / file.FileContext.Length * 100;
+            file.Progress = (double)totalBytesSent / file.FileContext.Count * 100; ;
 
             await InvokeAsync(StateHasChanged);
             await Task.Delay(20);
@@ -326,7 +327,7 @@
     public async Task FileSending(int length)
     {
         var file = _files.First(x => x.State == FileTransferStateEnum.Sending);
-        file.Progress = ((double)(file.FileContext.Length - length) / file.FileContext.Length) * 100;
+        file.Progress = (double)(file.FileSize - length) / file.FileSize * 100;
         await InvokeAsync(StateHasChanged);
     }
 

@@ -4,7 +4,6 @@
 @using Toolbox.Pages.Enums
 @using Toolbox.Pages.HashCheckService
 @using Toolbox.Pages.Models
-@using Toolbox.Pages.Shared.Dialogs
 
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
@@ -14,13 +13,10 @@
 
 <PageTitle>码术 - 文件传输</PageTitle>
 
-<DialogLoading IsVisible="@_isLoading" ContentText="@_loadingMessage"></DialogLoading>
-
 <MudPaper Width="100%" Elevation="0">
     <MudContainer MaxWidth="MaxWidth.Small">
         <MudPaper Width="100%"
                   Elevation="0"
-                  Height="300px"
                   Square="true"
                   Class="pa-5">
 
@@ -44,60 +40,52 @@
             }
             else
             {
-                if (_fileMetadata == null)
+
+                @switch (_connectionType)
                 {
-                    <div class="d-flex align-center">
-                        <MudProgressCircular Color="Color.Primary"
-                                             Indeterminate="true"
-                                             Size="Size.Small" />
-                        <MudText Typo="@Typo.caption" Class="ml-2">等待发送文件....</MudText>
-                    </div>
+                    case ConnectionTypeEnum.WebRTC:
+                        <div class="mt-2 mb-2" style="opacity: 0.8;font-size: 12px;">当前传输模式：点对点</div>
+                        break;
+                    case ConnectionTypeEnum.ServiceRelay:
+                        <div class="mt-2 mb-2" style="opacity: 0.8;font-size: 12px;">当前传输模式：服务器中转</div>
+                        break;
                 }
-                else
+
+                foreach (var file in _files)
                 {
-                    switch (_connectionType)
-                    {
-                        case ConnectionTypeEnum.WebRTC:
-                            <MudText Typo="@Typo.caption">点对点接收</MudText>
-                            break;
-                        case ConnectionTypeEnum.ServiceRelay:
-                            <MudText Typo="@Typo.caption">服务器中转接收</MudText>
-                            break;
-                    }
-
-                    <MudText Typo="Typo.overline" Class="mt-1">@_fileMetadata.FileName</MudText>
-
-                    <MudProgressLinear Striped="true"
-                                       Color="Color.Info"
-                                       Size="Size.Large"
-                                       Value="@_progress"
-                                       Class="mt-3">
-                        <MudText Typo="Typo.subtitle1" Color="Color.Dark">
-                            <b>@($"{Convert.ToInt32(_progress)}%")</b>
-                        </MudText>
-                    </MudProgressLinear>
-
-                    <MudButton Class="mt-5"
-                               Disabled="@(!_isFileReceived)"
-                               Variant="Variant.Filled"
-                               Color="Color.Info"
-                               OnClick="@(async () => await DownloadFileAsync())">下载</MudButton>
+                    <MudPaper Class="px-3 py-2">
+                        <div class="d-flex align-center justify-space-between">
+                            <MudText Typo="Typo.overline" Class="mt-1">@file.FileName</MudText>
+                            @switch (file.State)
+                            {
+                                case FileTransferStateEnum.Sent:
+                                    if (file.Succeed)
+                                    {
+                                        <MudLink Underline="@Underline.None"
+                                                 OnClick="@(() =>DownloadFileAsync(file.FileName))">下载</MudLink>
+                                    }
+                                    else
+                                    {
+                                        <MudLink Disabled="true">@($"失败：{file.Message}")</MudLink>
+                                    }
+                                    break;
+                                case FileTransferStateEnum.Sending:
+                                    <MudLink Disabled="true">接收中</MudLink>
+                                    break;
+                            }
+                        </div>
+                        <MudProgressLinear Striped="true"
+                                           Color="Color.Info"
+                                           Size="Size.Large"
+                                           Value="@file.Progress"
+                                           Class="mt-3">
+                            <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                                <b>@($"{Convert.ToInt32(file.Progress)}%")</b>
+                            </MudText>
+                        </MudProgressLinear>
+                    </MudPaper>
                 }
             }
-
-        </MudPaper>
-
-        <MudPaper Width="100%"
-                  Elevation="0"
-                  Square="true"
-                  Class="pa-5">
-
-            <MudList Clickable="false" Dense="true" DisableGutters="false">
-                @foreach (var message in _messages)
-                {
-                    <MudListItem Text="@(message)" />
-                }
-            </MudList>
 
         </MudPaper>
     </MudContainer>
@@ -108,20 +96,13 @@
     [Parameter]
     public int RoomId { get; set; }
 
-    private bool _isLoading = false;
-    private string _loadingMessage = "";
     private ConnectionTypeEnum _connectionType = ConnectionTypeEnum.None;
 
     private HubConnection _hub = null!;
     private DotNetObjectReference<FileTransferReceiver> _objRef = null!;
 
-    private bool _isFileReceived = false;
+    private readonly List<FileTransferInfo> _files = new List<FileTransferInfo>();
 
-    private FileTransferInfo? _fileMetadata;
-    private readonly List<byte> _fileBuffer = new();
-    private double _progress;
-
-    private readonly List<string> _messages = new List<string>();
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -149,7 +130,6 @@
         {
             //切换服务器中转模式
             _connectionType = ConnectionTypeEnum.ServiceRelay;
-            _messages.Add("启用服务器中转传输");
             await InvokeAsync(StateHasChanged);
         });
         _hub.On<string>("ReceiveFileInfo", async (fileInfo) =>
@@ -162,24 +142,12 @@
         });
         _hub.On("ReceiveFileSent", async () =>
         {
-            _messages.Add("文件接收完成");
-            await LoadingAsync("正在校验文件");
-            var sha1 = await HashServiceFactory.Create(HashTypeEnum.SHA1).ComputeHashAsync(_fileBuffer.ToArray(), false);
-            await LoadingCompletedAsync();
-            if (_fileMetadata?.SHA1 != sha1)
-            {
-                _messages.Add("接收失败：文件内容有缺失");
-                return;
-            }
-            _messages.Add("文件校验通过");
-            _isFileReceived = true;
-            await InvokeAsync(StateHasChanged);
+            await OnFileReceived();
         });
 
         await _hub.StartAsync();
         await JSRuntime.InvokeVoidAsync("initialization", _objRef, Configuration["StunServer"]);
 
-        _messages.Add($"准备进入房间....");
         var result = await _hub.InvokeAsync<string>("JoinRoom", RoomId);
         if (result != "ok")
         {
@@ -187,7 +155,6 @@
             NavigationManager.NavigateTo($"/file-transfer");
             return;
         }
-        _messages.Add("进入房间成功");
     }
 
     [JSInvokable]
@@ -212,18 +179,13 @@
     {
         //接收端准备就绪
         _connectionType = ConnectionTypeEnum.WebRTC;
-        _messages.Add("点对点连接已建立");
         await InvokeAsync(StateHasChanged);
     }
 
     [JSInvokable]
-    public async Task FileReceivingWithWebRTC(int length)
+    public async Task FileReceivingWithWebRTC(byte[] buffer)
     {
-        if (_fileMetadata != null)
-        {
-            _progress = ((double)length) / _fileMetadata.FileSize * 100;
-        }
-        await InvokeAsync(StateHasChanged);
+        await OnFileReceivingAsync(buffer);
     }
 
     [JSInvokable]
@@ -234,70 +196,51 @@
 
     private async Task OnReceiveFileInfo(string fileInfo)
     {
-        _fileMetadata = fileInfo.ToObject<FileTransferInfo>();
-        if (_fileMetadata == null)
+        var file = fileInfo.ToObject<FileTransferInfo>();
+        if (file == null)
         {
-            _messages.Add("文件元数据不完整");
             return;
         }
-
-        _messages.Add($"收到文件元数据：");
-        _messages.Add($"文件名：{_fileMetadata.FileName}");
-        _messages.Add($"大小：{_fileMetadata.FileSize}");
-        _messages.Add("准备接收文件....");
-
+        file.FileContext = new List<byte>();
+        file.State = FileTransferStateEnum.Sending;
+        _files.Add(file);
         await InvokeAsync(StateHasChanged);
     }
 
     [JSInvokable]
-    public async Task FileReceivedWithWebRTC(string sha1)
+    public async Task FileReceivedWithWebRTC()
     {
-        _messages.Add("文件接收完成");
-        if (_fileMetadata.SHA1 != sha1)
-        {
-            _messages.Add("接收失败：文件内容有缺失");
-            return;
-        }
-        _messages.Add("文件校验通过");
-        _isFileReceived = true;
+        await OnFileReceived();
+    }
+
+    private async Task OnFileReceivingAsync(byte[] buffer)
+    {
+        var file = _files.First(x => x.State == FileTransferStateEnum.Sending);
+        file.FileContext.AddRange(buffer);
+        file.Progress = (double)file.FileContext.Count / file.FileSize * 100;
         await InvokeAsync(StateHasChanged);
     }
 
-    public async Task OnFileReceivingAsync(byte[] buffer)
+    private async Task OnFileReceived()
     {
-        _fileBuffer.AddRange(buffer);
-        if (_fileMetadata != null)
+        var file = _files.First(x => x.State == FileTransferStateEnum.Sending);
+        var sha1 = await HashServiceFactory.Create(HashTypeEnum.SHA1).ComputeHashAsync(file.FileContext.ToArray(), false);
+        if (file.SHA1 != sha1)
         {
-            _progress = ((double)_fileBuffer.Count) / _fileMetadata.FileSize * 100;
+            file.Message = "文件校验失败";
+            file.Succeed = false;
         }
+        else
+        {
+            file.Succeed = true;
+        }
+        file.State = FileTransferStateEnum.Sent;
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task DownloadFileAsync()
+    private async Task DownloadFileAsync(string fileName)
     {
-        await LoadingAsync("正在下载...");
-        if (_connectionType == ConnectionTypeEnum.WebRTC)
-        {
-            await JSRuntime.InvokeVoidAsync("saveByteArrayToFile", _fileMetadata?.FileName);
-        }
-        else if (_connectionType == ConnectionTypeEnum.ServiceRelay)
-        {
-            await JSRuntime.InvokeVoidAsync("saveToFileWithBufferAndName", _fileMetadata?.FileName, _fileBuffer.ToArray());
-        }
-        await LoadingCompletedAsync();
-    }
-
-    private async Task LoadingAsync(string message)
-    {
-        _isLoading = true;
-        _loadingMessage = message;
-        await InvokeAsync(StateHasChanged);
-    }
-    private async Task LoadingCompletedAsync()
-    {
-        _isLoading = false;
-        _loadingMessage = "";
-        await InvokeAsync(StateHasChanged);
+        await JSRuntime.InvokeVoidAsync("saveToFileWithBufferAndName", fileName, _files.First(x => x.FileName == fileName).FileContext.ToArray());
     }
 
     public void Dispose()

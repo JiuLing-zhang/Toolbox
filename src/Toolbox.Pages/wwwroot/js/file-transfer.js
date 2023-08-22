@@ -111,7 +111,6 @@ function handleDataChannelOpen() {
 
 let readyToSendKey = "ReadyToSend";
 let fileSent = "FileSent";
-let receivedByteArray = [];
 function receiveFileData(event) {
 
     const receivedData = event.data;
@@ -122,14 +121,11 @@ function receiveFileData(event) {
             //收到元数据
             dotNetHelper.invokeMethodAsync('FileInfoReceived', fileInfo);
         } else if (receivedData == fileSent) {
-            let sha1 = GetFileSHA1(new Uint8Array(receivedByteArray));
-            dotNetHelper.invokeMethodAsync('FileReceivedWithWebRTC', sha1);
+            dotNetHelper.invokeMethodAsync('FileReceivedWithWebRTC');
         }
 
     } else {
-        // 将接收到的数据追加到字节数组中
-        receivedByteArray = [...receivedByteArray, ...new Uint8Array(receivedData)];
-        dotNetHelper.invokeMethodAsync('FileReceivingWithWebRTC', receivedByteArray.length);
+        dotNetHelper.invokeMethodAsync('FileReceivingWithWebRTC', new Uint8Array(receivedData));
     }
 }
 
@@ -161,10 +157,6 @@ function sendFileDataChunks(byteArray) {
         localDataChannel.send(fileSent);
         dotNetHelper.invokeMethodAsync('FileSent');
     }
-}
-
-function saveByteArrayToFile(fileName) {
-    saveToFileWithBufferAndName(fileName, new Uint8Array(receivedByteArray))
 }
 
 function saveToFileWithBufferAndName(fileName, buffer) {
