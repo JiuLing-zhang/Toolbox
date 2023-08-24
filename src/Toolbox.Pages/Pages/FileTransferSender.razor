@@ -88,8 +88,8 @@
                         }
 
                         <MudFileUpload Class="mr-3"
-                                       T="IBrowserFile"
-                                       OnFilesChanged="OnInputFileChanged">
+                                       T="IReadOnlyList<IBrowserFile>"
+                                       FilesChanged="UploadFiles">
                             <ButtonTemplate>
                                 <MudButton HtmlTag="label"
                                            Variant="Variant.Text"
@@ -226,46 +226,55 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private async void OnInputFileChanged(InputFileChangeEventArgs e)
+    private async void UploadFiles(IReadOnlyList<IBrowserFile> browserFiles)
     {
         long maxFileSize = 100000000;
-        if (e.GetMultipleFiles()[0].Size >= maxFileSize)
+        IList<IBrowserFile> files = new List<IBrowserFile>();
+        foreach (var browserFile in browserFiles)
         {
-            var options = new DialogOptions()
-                {
-                    NoHeader = true
-                };
-            var parameters = new DialogParameters();
-            parameters.Add("ContentText", "文件大小超过系统限制");
-            Dialog.Show<DialogOk>("提示", parameters, options);
-            return;
+            if (browserFile.Size >= maxFileSize)
+            {
+                var options = new DialogOptions()
+                    {
+                        NoHeader = true
+                    };
+                var parameters = new DialogParameters();
+                parameters.Add("ContentText", "文件大小超过系统限制");
+                Dialog.Show<DialogOk>("提示", parameters, options);
+                return;
+            }
+
+            if (_files.Any(x => x.FileName == browserFile.Name))
+            {
+                var options = new DialogOptions()
+                    {
+                        NoHeader = true
+                    };
+                var parameters = new DialogParameters();
+                parameters.Add("ContentText", "不能重复添加文件");
+                Dialog.Show<DialogOk>("提示", parameters, options);
+                return;
+            }
+
+            files.Add(browserFile);
         }
 
-        var fileName = e.GetMultipleFiles()[0].Name;
-        if (_files.Any(x => x.FileName == fileName))
+        await LoadingAsync("正在处理文件...");
+
+        foreach (var browserFile in files)
         {
-            var options = new DialogOptions()
-                {
-                    NoHeader = true
-                };
-            var parameters = new DialogParameters();
-            parameters.Add("ContentText", "不能重复添加文件");
-            Dialog.Show<DialogOk>("提示", parameters, options);
-            return;
+            var file = new FileTransferInfo();
+            file.FileName = browserFile.Name;
+            var ms = new MemoryStream();
+            await browserFile.OpenReadStream(maxFileSize).CopyToAsync(ms);
+            var buffer = ms.ToArray();
+            file.FileContext = new List<byte>(buffer);
+            file.FileSize = buffer.Length;
+            var hashService = HashServiceFactory.Create(HashTypeEnum.SHA1);
+            file.SHA1 = await hashService.ComputeHashAsync(buffer, false);
+
+            _files.Add(file);
         }
-
-        await LoadingAsync("正在生成文件元数据...");
-        var file = new FileTransferInfo();
-        file.FileName = fileName;
-        var ms = new MemoryStream();
-        await e.GetMultipleFiles()[0].OpenReadStream(maxFileSize).CopyToAsync(ms);
-        var buffer = ms.ToArray();
-        file.FileContext = new List<byte>(buffer);
-        file.FileSize = buffer.Length;
-        var hashService = HashServiceFactory.Create(HashTypeEnum.SHA1);
-        file.SHA1 = await hashService.ComputeHashAsync(buffer, false);
-
-        _files.Add(file);
         await LoadingCompletedAsync();
     }
 
