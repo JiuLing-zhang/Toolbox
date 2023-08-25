@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
 using Toolbox.Pages;
+using Toolbox.Pages.HashCheckService;
 
 namespace Toolbox.App
 {
@@ -36,6 +37,11 @@ namespace Toolbox.App
             {
                 client.BaseAddress = new Uri(sp.GetService<IConfiguration>()?.GetValue<string>("ChatAPIHost") ?? throw new ArgumentException());
             });
+            builder.Services.AddHttpClient("VirusTotal", (sp, client) =>
+            {
+                client.BaseAddress = new Uri(sp.GetService<IConfiguration>()?.GetValue<string>("VirusTotalAPIHost") ?? throw new ArgumentException());
+            });
+            builder.Services.AddSingleton<HashServiceFactory>();
             builder.Services.AddMudServices();
             builder.Services.AddMudMarkdownServices();
 
