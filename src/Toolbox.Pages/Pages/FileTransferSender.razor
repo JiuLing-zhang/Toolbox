@@ -34,12 +34,12 @@
             }
             else
             {
-                <MudField Label=""
-                          Class="mb-8"
-                          Variant="Variant.Text"
-                          Adornment="Adornment.End"
-                          AdornmentIcon="@Icons.Material.Filled.CheckCircle"
-                          AdornmentColor="Color.Success">@($"房间号 {_roomId}")</MudField>
+                <div class="d-flex mb-8">
+                    <MudChip Label="true" Variant="Variant.Outlined" Color="Color.Success">
+                        @($"房间号 {_roomId}")
+                    </MudChip>
+                    <MudChip Disabled="true" Label="true" Variant="Variant.Outlined" Color="Color.Surface">发送方</MudChip>
+                </div>
 
                 if (_connectionType == ConnectionTypeEnum.None)
                 {
