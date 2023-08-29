@@ -13,7 +13,7 @@
          ApplyEffectsToContainer="true"
          PanelClass="pa-6"
          ActivePanelIndexChanged="OnActivePanelIndexChanged">
-    <MudTabPanel Text="开源软件">
+    <MudTabPanel Text="开源软件" BadgeData="@($"{_apps?.Count}")">
         @if (_apps == null)
         {
             if (_isAppError)
@@ -100,7 +100,7 @@
         }
         <MudLink Href="/app-publish">发布</MudLink>
     </MudTabPanel>
-    <MudTabPanel Text="开源组件">
+    <MudTabPanel Text="开源组件" BadgeData="@($"{_components?.Count}")">
 
         @if (_components == null)
         {
@@ -156,6 +156,7 @@
     protected override async Task OnInitializedAsync()
     {
         await GetApps();
+        await GetComponents();
     }
 
     private async void OnActivePanelIndexChanged(int index)
