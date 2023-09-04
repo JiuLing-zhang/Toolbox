@@ -29,13 +29,15 @@
                 </MudCardContent>
                 <MudCardActions>
 
-                    <MudTextField @bind-Value="RoomId"
+                    <MudTextField T="string"
                                   Label="请输入对方房间号连接"
                                   Variant="Variant.Outlined"
                                   Adornment="Adornment.End"
                                   AdornmentIcon="@Icons.Material.Filled.JoinInner"
                                   AdornmentColor="Color.Info"
-                                  OnAdornmentClick="@(async () => await GotoReceiverPageAsync())" />
+                                  Immediate="true"
+                                  MaxLength="4"
+                                  ValueChanged="@(InputRoomIdChanged)" />
                 </MudCardActions>
             </MudCard>
         </MudPaper>
@@ -43,15 +45,20 @@
 </MudPaper>
 @code
 {
-    public string? RoomId { get; set; }
     private Task GotoSenderPageAsync()
     {
         NavigationManager.NavigateTo($"/file-transfer/sender");
         return Task.CompletedTask;
     }
-    private Task GotoReceiverPageAsync()
+
+    private Task InputRoomIdChanged(string value)
     {
-        NavigationManager.NavigateTo($"/file-transfer/receiver/{RoomId}");
+        value = value.Trim();
+        int roomId;
+        if (value.Length == 4 && int.TryParse(value, out roomId))
+        {
+            NavigationManager.NavigateTo($"/file-transfer/receiver/{roomId}");
+        }
         return Task.CompletedTask;
     }
 }
