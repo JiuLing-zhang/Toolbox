@@ -2,6 +2,7 @@
 internal enum FileTransferStateEnum
 {
     Init,
+    Queue,
     Sending,
     Sent
 }

@@ -21,10 +21,27 @@
                   Class="pa-5">
 
             <div class="d-flex mb-8">
+                <MudChip Disabled="true" Label="true" Variant="Variant.Outlined" Color="Color.Surface">
+                    接收方
+                </MudChip>
                 <MudChip Label="true" Variant="Variant.Outlined" Color="Color.Success">
                     @($"房间号 {RoomId}")
                 </MudChip>
-                <MudChip Disabled="true" Label="true" Variant="Variant.Outlined" Color="Color.Surface">接收方</MudChip>
+
+                @switch (_connectionType)
+                {
+                    case ConnectionTypeEnum.WebRTC:
+                        <MudChip Label="true" Variant="Variant.Outlined" Color="Color.Success">
+                            点对点传输
+                        </MudChip>
+                        break;
+                    case ConnectionTypeEnum.ServiceRelay:
+                        <MudChip Label="true" Variant="Variant.Outlined" Color="Color.Warning">
+                            服务器中转传输
+                        </MudChip>
+                        break;
+                }
+
             </div>
 
             @if (_connectionType == ConnectionTypeEnum.None)
@@ -38,17 +55,6 @@
             }
             else
             {
-
-                @switch (_connectionType)
-                {
-                    case ConnectionTypeEnum.WebRTC:
-                        <div class="mt-2 mb-2" style="opacity: 0.8;font-size: 12px;">当前传输模式：点对点</div>
-                        break;
-                    case ConnectionTypeEnum.ServiceRelay:
-                        <div class="mt-2 mb-2" style="opacity: 0.8;font-size: 12px;">当前传输模式：服务器中转</div>
-                        break;
-                }
-
                 foreach (var file in _files)
                 {
                     <MudPaper Class="px-3 py-2">

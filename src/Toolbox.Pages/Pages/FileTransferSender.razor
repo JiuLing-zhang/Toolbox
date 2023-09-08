@@ -6,6 +6,7 @@
 @using Toolbox.Pages.Models
 @using Toolbox.Pages.Shared.Dialogs
 @using System.Text.Json
+@using System.Collections.Concurrent
 
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
@@ -35,10 +36,26 @@
             else
             {
                 <div class="d-flex mb-8">
+                    <MudChip Disabled="true" Label="true" Variant="Variant.Outlined" Color="Color.Surface">
+                        发送方
+                    </MudChip>
                     <MudChip Label="true" Variant="Variant.Outlined" Color="Color.Success">
                         @($"房间号 {_roomId}")
                     </MudChip>
-                    <MudChip Disabled="true" Label="true" Variant="Variant.Outlined" Color="Color.Surface">发送方</MudChip>
+
+                    @switch (_connectionType)
+                    {
+                        case ConnectionTypeEnum.WebRTC:
+                            <MudChip Label="true" Variant="Variant.Outlined" Color="Color.Success">
+                                点对点传输
+                            </MudChip>
+                            break;
+                        case ConnectionTypeEnum.ServiceRelay:
+                            <MudChip Label="true" Variant="Variant.Outlined" Color="Color.Warning">
+                                服务器中转传输
+                            </MudChip>
+                            break;
+                    }
                 </div>
 
                 if (_connectionType == ConnectionTypeEnum.None)
@@ -77,16 +94,6 @@
                 else
                 {
                     <div class="d-flex align-center justify-space-between mb-2">
-                        @switch (_connectionType)
-                        {
-                            case ConnectionTypeEnum.WebRTC:
-                                <div class="mt-2" style="opacity: 0.8;font-size: 12px;">当前传输模式：点对点</div>
-                                break;
-                            case ConnectionTypeEnum.ServiceRelay:
-                                <div class="mt-2" style="opacity: 0.8;font-size: 12px;">当前传输模式：服务器中转</div>
-                                break;
-                        }
-
                         <MudFileUpload Class="mr-3"
                                        T="IReadOnlyList<IBrowserFile>"
                                        FilesChanged="UploadFiles">
@@ -101,6 +108,16 @@
                                 </MudButton>
                             </ButtonTemplate>
                         </MudFileUpload>
+                        @if (_files.Any())
+                        {
+                            <MudButton HtmlTag="label"
+                                       Variant="Variant.Text"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       OnClick="@(SendAllFilesAsync)">
+                                全部发送
+                            </MudButton>
+                        }
                     </div>
 
                     foreach (var file in _files)
@@ -113,6 +130,9 @@
                                     case FileTransferStateEnum.Init:
                                         <MudLink Underline="@Underline.None"
                                                  OnClick="@(() =>SendFileAsync(file.FileName))">发送</MudLink>
+                                        break;
+                                    case FileTransferStateEnum.Queue:
+                                        <MudLink Disabled="true">排队中</MudLink>
                                         break;
                                     case FileTransferStateEnum.Sending:
                                         <MudLink Disabled="true">发送中</MudLink>
@@ -141,6 +161,7 @@
 
 @code
 {
+    private bool _isClosePage = false;
     private int _roomId;
     private bool _isLoading = false;
     private string _loadingMessage = "";
@@ -152,6 +173,8 @@
     private DotNetObjectReference<FileTransferSender> _objRef = null!;
 
     private readonly List<FileTransferInfo> _files = new List<FileTransferInfo>();
+    private readonly SemaphoreSlim _fileQueueSlim = new(1, 1);
+    private readonly ConcurrentQueue<FileTransferInfo> _fileQueue = new ConcurrentQueue<FileTransferInfo>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -192,6 +215,7 @@
         _roomId = await _hub.InvokeAsync<int>("CreateRoom");
 
         Console.WriteLine("等待接收方进入....");
+        await Task.Factory.StartNew(StartSendFileQueueAsync, TaskCreationOptions.LongRunning);
     }
 
     [JSInvokable]
@@ -280,30 +304,53 @@
 
     private async Task SendFileAsync(string fileName)
     {
-        if (_files.Any(x => x.State == FileTransferStateEnum.Sending))
+        var file = _files.First(x => x.FileName == fileName);
+        if (file.State != FileTransferStateEnum.Init)
         {
-            var options = new DialogOptions()
-                {
-                    NoHeader = true
-                };
-            var parameters = new DialogParameters();
-            parameters.Add("ContentText", "不允许同时发送多个文件");
-            Dialog.Show<DialogOk>("提示", parameters, options);
             return;
         }
-        _files.First(x => x.FileName == fileName).State = FileTransferStateEnum.Sending;
-        var file = _files.First(x => x.FileName == fileName);
+        file.State = FileTransferStateEnum.Queue;
+        _fileQueue.Enqueue(file);
+        await InvokeAsync(StateHasChanged);
+    }
 
-        FileMetadata fileMetadata = file as FileMetadata;
-        if (_connectionType == ConnectionTypeEnum.WebRTC)
+    private async Task SendAllFilesAsync()
+    {
+        foreach (var file in _files)
         {
-            await JSRuntime.InvokeVoidAsync("sendFileInfo", JsonSerializer.Serialize(fileMetadata));
-            await JSRuntime.InvokeVoidAsync("sendFile", file.FileContext.ToArray());
+            if (file.State != FileTransferStateEnum.Init)
+            {
+                continue;
+            }
+            file.State = FileTransferStateEnum.Queue;
+            _fileQueue.Enqueue(file);
         }
-        else if (_connectionType == ConnectionTypeEnum.ServiceRelay)
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task StartSendFileQueueAsync()
+    {
+        while (!_isClosePage)
         {
-            await _hub.InvokeAsync("SendFileInfo", JsonSerializer.Serialize(fileMetadata));
-            await SendFileWithSignalRAsync();
+            while (_fileQueue.TryDequeue(out var file))
+            {
+                await _fileQueueSlim.WaitAsync();
+                _files.First(x => x.FileName == file.FileName).State = FileTransferStateEnum.Sending;
+                FileMetadata fileMetadata = file as FileMetadata;
+                if (_connectionType == ConnectionTypeEnum.WebRTC)
+                {
+                    await JSRuntime.InvokeVoidAsync("sendFileInfo", JsonSerializer.Serialize(fileMetadata));
+                    await JSRuntime.InvokeVoidAsync("sendFile", file.FileContext.ToArray());
+                }
+                else if (_connectionType == ConnectionTypeEnum.ServiceRelay)
+                {
+                    await _hub.InvokeAsync("SendFileInfo", JsonSerializer.Serialize(fileMetadata));
+                    await SendFileWithSignalRAsync();
+                }
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(100);
+            }
+            await Task.Delay(1000);
         }
     }
 
@@ -330,6 +377,7 @@
         }
         await _hub.InvokeAsync("SendFileSent");
         file.State = FileTransferStateEnum.Sent;
+        _fileQueueSlim.Release();
     }
 
     [JSInvokable]
@@ -344,6 +392,7 @@
     public async Task FileSent()
     {
         _files.First(x => x.State == FileTransferStateEnum.Sending).State = FileTransferStateEnum.Sent;
+        _fileQueueSlim.Release();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -360,10 +409,9 @@
         await InvokeAsync(StateHasChanged);
     }
 
-
-
     public void Dispose()
     {
+        _isClosePage = true;
         _objRef?.Dispose();
     }
 }
