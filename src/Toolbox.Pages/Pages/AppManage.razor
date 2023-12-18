@@ -40,11 +40,11 @@
                     <div style="display: flex; align-items: center;">
                         <MudImage Src="@app.Icon" Width="20" Height="20" />
                         <MudText Class="ml-3" Typo="Typo.subtitle1" Style="font-weight: bold;">@app.AppName</MudText>
-                        <MudIconButton Class="ml-8" Icon="@Icons.Custom.Brands.GitHub" Style="color:#0099FF" Href="@app.GitHub" Target="_blank" />
-                    </div>
+                            <MudIconButton Class="ml-8" Icon="@Icons.Custom.Brands.GitHub" Style="color:#0099FF" Href="@app.GitHub" Target="_blank" />
+                        </div>
 
-                    <MudText Typo="Typo.body2">@app.Description</MudText>
-                    @if (app.Versions == null)
+                        <MudText Typo="Typo.body2">@app.Description</MudText>
+                        @if (app.Versions == null)
                     {
                         <MudAlert Class="mt-2" Severity="Severity.Info" Dense="true">没有可用的版本信息。仓库有源码，请自行编译</MudAlert>
                     }
@@ -71,34 +71,33 @@
                                     <MudText Typo="Typo.subtitle2">平台:</MudText>
                                     <MudImage Class="ml-3" Src="@($"_content/Toolbox.Pages/images/{icon}.png")" Width="15" Height="15"></MudImage>
                                     <MudText Class="ml-1" Typo="Typo.subtitle2">@version.PlatformType</MudText>
-                                    <MudLink Class="ml-2" Href="@($"{Configuration["WebAPIHost"]}/{version.DownloadPath}")" Underline="Underline.None">下载</MudLink>
-                                </MudItem>
+                                        <MudLink Class="ml-2" Href="@($"{Configuration["WebAPIHost"]}/{version.DownloadPath}")" Underline="Underline.None">下载</MudLink>
+                                    </MudItem>
 
-                                <MudItem Class="d-flex align-center" xs="12" md="5">
-                                    <MudText Typo="Typo.subtitle2">版本:</MudText>
-                                    <MudText Class="ml-3" Typo="Typo.subtitle2">@version.VersionName</MudText>
-                                </MudItem>
+                                    <MudItem Class="d-flex align-center" xs="12" md="5">
+                                        <MudText Typo="Typo.subtitle2">版本:</MudText>
+                                        <MudText Class="ml-3" Typo="Typo.subtitle2">@version.VersionName</MudText>
+                                    </MudItem>
 
-                                <MudItem Class="d-flex align-center" xs="12" md="5">
-                                    <MudText Typo="Typo.subtitle2">发布时间:</MudText>
-                                    <MudText Class="ml-3" Typo="Typo.subtitle2">@version.PublishTime</MudText>
-                                </MudItem>
-                                <MudItem Class="d-flex align-center" xs="12" md="5">
-                                    <MudText Typo="Typo.subtitle2">大小:</MudText>
-                                    <MudText Class="ml-3" Typo="Typo.subtitle2">@version.FileLengthMb</MudText>
-                                </MudItem>
+                                    <MudItem Class="d-flex align-center" xs="12" md="5">
+                                        <MudText Typo="Typo.subtitle2">发布时间:</MudText>
+                                        <MudText Class="ml-3" Typo="Typo.subtitle2">@version.PublishTime</MudText>
+                                    </MudItem>
+                                    <MudItem Class="d-flex align-center" xs="12" md="5">
+                                        <MudText Typo="Typo.subtitle2">大小:</MudText>
+                                        <MudText Class="ml-3" Typo="Typo.subtitle2">@version.FileLengthMb</MudText>
+                                    </MudItem>
 
-                                <MudItem Class="d-flex align-center" xs="12" md="5">
-                                    <MudText Typo="Typo.subtitle2">@version.SignType.ToString():</MudText>
-                                    <MudText Class="ml-8" Typo="Typo.subtitle2">@version.SignValue</MudText>
-                                </MudItem>
-                            </MudGrid>
+                                    <MudItem Class="d-flex align-center" xs="12" md="5">
+                                        <MudText Typo="Typo.subtitle2">@version.SignType.ToString():</MudText>
+                                        <MudText Class="ml-8" Typo="Typo.subtitle2">@version.SignValue</MudText>
+                                    </MudItem>
+                                </MudGrid>
                         }
                     }
                 </MudPaper>
             }
         }
-        <MudLink Href="/app-publish">发布</MudLink>
     </MudTabPanel>
     <MudTabPanel Text="开源组件" BadgeData="@($"{_components?.Count}")">
 
@@ -129,14 +128,14 @@
                         <MudItem Class="d-flex align-center" xs="12" md="6">
                             <MudImage Src="@component.Icon" Width="20" Height="20" />
                             <MudText Class="ml-3" Typo="Typo.subtitle1" Style="font-weight: bold;">@component.Name</MudText>
-                        </MudItem>
-                        <MudItem Class="d-flex align-center" xs="12" md="6">
-                            <MudImage Src="@($"https://img.shields.io/nuget/v/{component.Name}")" />
-                            <MudImage Src="@($"https://img.shields.io/nuget/dt/{component.Name}")" Class="ml-2" />
-                        </MudItem>
-                    </MudGrid>
-                    <MudText Class="mt-5" Typo="Typo.body2">
-                        @component.Description
+                            </MudItem>
+                            <MudItem Class="d-flex align-center" xs="12" md="6">
+                                <MudImage Src="@($"https://img.shields.io/nuget/v/{component.Name}")" />
+                                <MudImage Src="@($"https://img.shields.io/nuget/dt/{component.Name}")" Class="ml-2" />
+                            </MudItem>
+                        </MudGrid>
+                        <MudText Class="mt-5" Typo="Typo.body2">
+                            @component.Description
                     </MudText>
                     <div style="display: flex; align-items: center; margin-top: 10px;">
                         <MudLink Href="@($"https://www.nuget.org/packages/{component.Name}")" Underline="Underline.None" Target="_blank">nuget</MudLink>
@@ -147,6 +146,14 @@
         }
     </MudTabPanel>
 </MudTabs>
+
+<MudButton Href="/app-publish"
+           Class="mt-2"
+           Variant="Variant.Text"
+           EndIcon="@Icons.Material.Filled.Window"
+           Style="text-transform:none">
+    发布
+</MudButton>
 
 @code {
     private bool _isAppError = false;
