@@ -35,15 +35,18 @@ public class AppController : ControllerBase
     [HttpPost("publish")]
     public async Task<IActionResult> PublishAsync([FromForm] AppPublishRequest request)
     {
-
         if (Request.Form.Files.Count != 1)
         {
-            return Ok(new ApiResponse(101, "头像未成功上传"));
+            return Ok(new ApiResponse(101, "文件数量异常"));
         }
         var file = Request.Form.Files[0];
         if (file.Length == 0)
         {
             return Ok(new ApiResponse(102, "文件不能为空"));
+        }
+        if (!Version.TryParse(request.VersionName, out _))
+        {
+            return Ok(new ApiResponse(103, "版本号格式不正确"));
         }
 
         var config = await _databaseConfigService.GetOneAsync<PublishConfig>("publish");
