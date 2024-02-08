@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34018.315
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Toolbox.Pages", "src\Toolbox.Pages\Toolbox.Pages.csproj", "{974BE500-EF3E-449D-AD08-B6681D693358}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Toolbox.Pages", "Toolbox.Pages\Toolbox.Pages.csproj", "{974BE500-EF3E-449D-AD08-B6681D693358}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Toolbox.Web", "src\Toolbox.Web\Toolbox.Web.csproj", "{E0226327-695B-4734-B2C7-09A567A6778B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Toolbox.Web", "Toolbox.Web\Toolbox.Web.csproj", "{E0226327-695B-4734-B2C7-09A567A6778B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
