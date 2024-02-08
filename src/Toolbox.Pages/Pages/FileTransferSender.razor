@@ -7,11 +7,13 @@
 @using Toolbox.Pages.Shared.Dialogs
 @using System.Text.Json
 @using System.Collections.Concurrent
+@using MudExtensions;
 
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
 @inject IDialogService Dialog
 @inject HashServiceFactory HashServiceFactory
+@inject NavigationManager NavigationManager
 
 <PageTitle>码术 - 文件传输</PageTitle>
 
@@ -62,6 +64,11 @@
                 {
                     if (!_isReceiverJoined)
                     {
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">扫码可直接进入。微信浏览器无法下载文件，请勿使用微信扫码</MudAlert>
+                        <MudBarcode @bind-Value="_qrValue"
+                                    Width="170"
+                                    Height="170"
+                                    BarcodeFormat="ZXing.BarcodeFormat.QR_CODE" />
                         <div class="d-flex align-center">
                             <MudProgressCircular Color="Color.Primary"
                                                  Indeterminate="true"
@@ -125,7 +132,7 @@
                         <MudPaper Class="px-3 py-2">
                             <div class="d-flex align-center justify-space-between">
                                 <MudText Typo="Typo.overline" Class="mt-1">@file.FileName</MudText>
-                                @switch (file.State)
+                                    @switch (file.State)
                                 {
                                     case FileTransferStateEnum.Init:
                                         <MudLink Underline="@Underline.None"
@@ -165,6 +172,7 @@
     private int _roomId;
     private bool _isLoading = false;
     private string _loadingMessage = "";
+    private string _qrValue = "";
 
     private bool _isReceiverJoined = false;
     private ConnectionTypeEnum _connectionType = ConnectionTypeEnum.None;
@@ -213,6 +221,7 @@
         await JSRuntime.InvokeVoidAsync("initialization", _objRef, Configuration["StunServer"]);
 
         _roomId = await _hub.InvokeAsync<int>("CreateRoom");
+        _qrValue = $"{NavigationManager.BaseUri}file-transfer/receiver/{_roomId}";
 
         Console.WriteLine("等待接收方进入....");
         await Task.Factory.StartNew(StartSendFileQueueAsync, TaskCreationOptions.LongRunning);
