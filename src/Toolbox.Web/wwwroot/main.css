@@ -10,16 +10,6 @@
     flex-basis: auto;
 }
 
-.footer {
-    height:25px;
-    flex-grow: 0;
-    flex-shrink: 0;
-    flex-basis: auto;
-    display: flex;
-    justify-content: center;
-    padding-bottom: 10px;
-}
-
 .main-img {
     display: flex;
     justify-content: center;

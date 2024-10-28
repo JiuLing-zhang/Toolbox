@@ -78,11 +78,18 @@
     </MudDrawer>
     <MudMainContent>
         <MudContainer>
-            @Body
+            <MudPaper Elevation="0" MinHeight="calc(100vh - 120px);">
+                @Body
+            </MudPaper>
+            <MudPaper Elevation="0">
+                <MudLink Href="https://beian.miit.gov.cn"
+                         Target="_blank"
+                         Underline="Underline.None"
+                         Color="Color.Surface">陕ICP备2023002820号-1</MudLink>
+            </MudPaper>
         </MudContainer>
     </MudMainContent>
 </MudLayout>
-
 
 @code {
     bool open = true;
