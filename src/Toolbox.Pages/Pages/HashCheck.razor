@@ -46,8 +46,8 @@
         <MudText Typo="Typo.subtitle2">文件计算</MudText>
         <MudStack Style="width: 100%">
             <MudFileUpload T="IBrowserFile" OnFilesChanged="OnInputFileChanged" Hidden="false" Class="flex-1" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
-            @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
-                <ButtonTemplate>
+                           @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
+                <ActivatorContent>
                     @if (_fileName.IsEmpty())
                     {
                         <MudPaper Height="150px" Outlined="true" Class="@_dragClass">
@@ -59,12 +59,13 @@
                     else
                     {
                         <MudPaper Height="150px" Outlined="true" Class="relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-30">
-                            <MudChip Color="Color.Dark"
+                            <MudChip T="string"
+                                     Color="Color.Dark"
                                      Text="@_fileName"
                                      OnClose="@(()=>RemoveFile())" />
                         </MudPaper>
                     }
-                </ButtonTemplate>
+                </ActivatorContent>
             </MudFileUpload>
         </MudStack>
     </MudItem>
@@ -75,7 +76,7 @@
             <MudText Typo="Typo.subtitle2" Class="mr-5">计算结果</MudText>
             <MudSwitch Class="ml-5"
                        T="bool"
-                       CheckedChanged="@((value)=>OnIsUpperChanged(value))"
+                       ValueChanged="@((value)=>OnIsUpperChanged(value))"
                        Label="大写"
                        Color="Color.Success" />
             <MudSpacer />

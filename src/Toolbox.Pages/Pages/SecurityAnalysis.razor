@@ -17,7 +17,7 @@
 </div>
 
 <MudFileUpload T="IBrowserFile" OnFilesChanged="OnInputFileChanged" Hidden="false" Class="flex-1" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
-@ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
+               @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
     <ButtonTemplate>
         @if (_fileName.IsEmpty())
         {
@@ -30,7 +30,8 @@
         else
         {
             <MudPaper Height="150px" Outlined="true" Class="relative rounded-lg border-2 border-dashed pa-4 mud-width-full mud-height-full z-30">
-                <MudChip Color="Color.Dark"
+                <MudChip T="string"
+                         Color="Color.Dark"
                          Text="@_fileName" />
             </MudPaper>
         }

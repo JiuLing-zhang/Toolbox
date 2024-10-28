@@ -38,11 +38,11 @@ else
                 </div>
                 <MudForm @ref="@_form" Model="@_model">
                     <MudSelect T="string"
-                           @bind-Value="_model.AppKey"
-                           Required="true"
-                           RequiredError="请选择软件"
-                           Label="软件名称"
-                           Variant="Variant.Outlined">
+                               @bind-Value="_model.AppKey"
+                               Required="true"
+                               RequiredError="请选择软件"
+                               Label="软件名称"
+                               Variant="Variant.Outlined">
                         @foreach (var app in _apps)
                         {
                             <MudSelectItem Value="@(app.Key)">@app.Value</MudSelectItem>
@@ -52,68 +52,67 @@ else
                     <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
                         <MudText Class="mr-4">平台</MudText>
                         <MudRadioGroup @bind-SelectedOption="_model.Platform" T="PlatformEnum">
-                            <MudRadio Color="Color.Info" Option="@(PlatformEnum.Windows)">Windows</MudRadio>
-                            <MudRadio Color="Color.Info" Option="@(PlatformEnum.Android)">Android</MudRadio>
-                            <MudRadio Color="Color.Info" Option="@(PlatformEnum.iOS)">iOS</MudRadio>
+                            <MudRadio T="PlatformEnum" Color="Color.Info" Option="@(PlatformEnum.Windows)">Windows</MudRadio>
+                            <MudRadio T="PlatformEnum" Color="Color.Info" Option="@(PlatformEnum.Android)">Android</MudRadio>
+                            <MudRadio T="PlatformEnum" Color="Color.Info" Option="@(PlatformEnum.iOS)">iOS</MudRadio>
                         </MudRadioGroup>
                     </div>
 
                     <MudTextField T="string"
-                              Label="版本"
-                              @bind-Value="_model.VersionName"
-                              Variant="Variant.Outlined"
-                              Required="true"
-                              RequiredError="版本号不能为空"/>
+                                  Label="版本"
+                                  @bind-Value="_model.VersionName"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  RequiredError="版本号不能为空" />
 
                     <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
                         <MudText Class="mr-4">最小运行版本</MudText>
                         <MudRadioGroup @bind-SelectedOption="_model.IsMinVersion" T="bool">
-                            <MudRadio Color="Color.Info" Option="@(true)">是</MudRadio>
-                            <MudRadio Color="Color.Info" Option="@(false)">否</MudRadio>
+                            <MudRadio T="bool" Color="Color.Info" Option="@(true)">是</MudRadio>
+                            <MudRadio T="bool" Color="Color.Info" Option="@(false)">否</MudRadio>
                         </MudRadioGroup>
                     </div>
 
                     <MudTextField T="string" @bind-Value="_model.Log" Label="更新日志" Variant="Variant.Outlined" Text="" Lines="5" />
 
                     <MudTextField Class="mt-3"
-                              T="string"
-                              Label="文件"
-                              @bind-Value="_model.FileName"
-                              Variant="Variant.Outlined"
-                              ReadOnly="true"
-                              Required="true"
-                              RequiredError="文件不能为空" />
+                                  T="string"
+                                  Label="文件"
+                                  @bind-Value="_model.FileName"
+                                  Variant="Variant.Outlined"
+                                  ReadOnly="true"
+                                  Required="true"
+                                  RequiredError="文件不能为空" />
                     <MudFileUpload T="IBrowserFile" @bind-Files="_file" OnFilesChanged="UploadFiles">
-                        <ButtonTemplate>
+                        <ActivatorContent>
                             <MudButton HtmlTag="label"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Info"
-                                   StartIcon="@Icons.Material.Filled.CloudUpload"
-                                       for="@context">
+                                       Variant="Variant.Filled"
+                                       Color="Color.Info"
+                                       StartIcon="@Icons.Material.Filled.CloudUpload">
                                 选择文件
                             </MudButton>
-                        </ButtonTemplate>
+                        </ActivatorContent>
                     </MudFileUpload>
                     <div class="d-flex align-center mt-4 mb-4 pl-5 pr-5 pt-2 pb-2 chip-set-group">
                         <MudText Class="mr-4">计算签名</MudText>
                         <MudRadioGroup @bind-SelectedOption="_model.SignType" T="SignTypeEnum">
-                            <MudRadio Color="Color.Info" Option="@(SignTypeEnum.MD5)">MD5</MudRadio>
-                            <MudRadio Color="Color.Info" Option="@(SignTypeEnum.SHA1)">SHA1</MudRadio>
+                            <MudRadio T="SignTypeEnum" Color="Color.Info" Option="@(SignTypeEnum.MD5)">MD5</MudRadio>
+                            <MudRadio T="SignTypeEnum" Color="Color.Info" Option="@(SignTypeEnum.SHA1)">SHA1</MudRadio>
                         </MudRadioGroup>
                     </div>
 
                     <MudTextField T="string" Label="密码"
-                              @bind-Value="_model.Password"
-                              InputType="InputType.Password"
-                              Variant="Variant.Outlined"
-                              Required="true"
-                              RequiredError="密码不能为空" />
+                                  @bind-Value="_model.Password"
+                                  InputType="InputType.Password"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  RequiredError="密码不能为空" />
                     <MudButton Class="mt-5"
-                           Disabled="_isSuccess"
-                           Variant="Variant.Filled"
-                           EndIcon="@Icons.Material.Filled.Send"
-                           Color="Color.Info"
-                           OnClick="@(async () => await Publish())">发布</MudButton>
+                               Disabled="_isSuccess"
+                               Variant="Variant.Filled"
+                               EndIcon="@Icons.Material.Filled.Send"
+                               Color="Color.Info"
+                               OnClick="@(async () => await Publish())">发布</MudButton>
 
                 </MudForm>
             </MudPaper>
@@ -190,7 +189,7 @@ else
         if (result != null && result.Code == 0)
         {
             _isSuccess = true;
-        } 
+        }
         var parameters = new DialogParameters();
         parameters.Add("ContentText", result?.Message ?? "未知错误");
         await Dialog.ShowAsync<DialogOk>("提示", parameters);

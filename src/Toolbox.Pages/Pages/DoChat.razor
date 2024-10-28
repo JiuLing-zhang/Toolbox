@@ -54,8 +54,8 @@
     @if (_selectedSaveContext)
     {
         <MudAlert Severity="Severity.Warning"
-              Class="mt-3"
-              ContentAlignment="HorizontalAlignment.Left">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
+                  Class="mt-3"
+                  ContentAlignment="HorizontalAlignment.Left">当前模式会记录对话内容，尽可能的让对话更流畅，所以比较耗资源，您玩玩就好啦~~</MudAlert>
     }
 
     @if (_histories.Count == 0)
@@ -67,13 +67,13 @@
         <MudAlert Dense="true" NoIcon="true" Severity="Severity.Success">text-davinci-003：速度快，对自然语言友好，对代码不友好</MudAlert>
         <MudAlert Dense="true" NoIcon="true" Severity="Severity.Success">
             gpt-3.5-turbo：速度慢，但是真强大
-            <MudChip Color="Color.Error" Size="Size.Small">最近巨慢，普通问题还是使用 davinci 吧</MudChip>
+            <MudChip T="string" Color="Color.Error" Size="Size.Small">最近巨慢，普通问题还是使用 davinci 吧</MudChip>
         </MudAlert>
 
         <MudText Class="mt-3 ml-3 d-flex align-center">
             模式
             <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.Code" Size="Size.Small"></MudIcon>
-            <MudChip Variant="Variant.Text" Color="Color.Warning">仅在使用 gpt-3.5-turbo 模型时可用</MudChip>
+            <MudChip T="string" Variant="Variant.Text" Color="Color.Warning">仅在使用 gpt-3.5-turbo 模型时可用</MudChip>
         </MudText>
         <MudAlert Dense="true" NoIcon="true" Severity="Severity.Success">普通模式：最基础的接入</MudAlert>
         <MudAlert Dense="true" NoIcon="true" Severity="Severity.Success">程序员模式：你对面坐了一个大神程序员</MudAlert>
@@ -90,28 +90,28 @@
         <MudPaper Class="pa-2 mt-3" Square="true" Outlined="true">
             <div class="d-flex align-start mb-3">
                 <MudIcon Class="mt-1"
-                     Icon="@Icons.Material.Filled.Chat"
-                     Color="Color.Primary"
-                     Size="Size.Small" />
+                         Icon="@Icons.Material.Filled.Chat"
+                         Color="Color.Primary"
+                         Size="Size.Small" />
                 <MudText Class="ml-2" Typo="Typo.subtitle1">@history.Question</MudText>
             </div>
 
             <div class="d-flex">
                 <MudIcon Class="mr-2"
-                     Icon="@Icons.Material.Filled.SmartToy"
-                     Color="Color.Secondary"
-                     Size="Size.Small" />
+                         Icon="@Icons.Material.Filled.SmartToy"
+                         Color="Color.Secondary"
+                         Size="Size.Small" />
                 <MudMarkdown Value="@history.Answer" />
             </div>
 
             @if (_isShowRetry && history.Equals(_histories.Last()))
             {
                 <MudButton Class="ml-7"
-                   Variant="Variant.Filled"
-                   Size="Size.Small"
-                   StartIcon="@Icons.Material.Filled.Autorenew"
-                   OnClick="@(()=>RetryChat())"
-                   Color="Color.Error">重试</MudButton>
+                           Variant="Variant.Filled"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Autorenew"
+                           OnClick="@(()=>RetryChat())"
+                           Color="Color.Error">重试</MudButton>
             }
         </MudPaper>
     }
@@ -121,27 +121,27 @@
 
             <div class="d-flex align-start mb-3">
                 <MudIcon Class="mt-1"
-                     Icon="@Icons.Material.Filled.Chat"
-                     Color="Color.Primary"
-                     Size="Size.Small" />
+                         Icon="@Icons.Material.Filled.Chat"
+                         Color="Color.Primary"
+                         Size="Size.Small" />
                 <MudText Class="ml-2" Typo="Typo.subtitle1">@_currentQuestion</MudText>
             </div>
 
             @if (_currentAnswer.Length == 0)
             {
                 <MudProgressLinear Color="Color.Secondary"
-                           Striped="true"
-                           Size="Size.Large"
-                           Value="100"
-                           Class="my-7" />
+                                   Striped="true"
+                                   Size="Size.Large"
+                                   Value="100"
+                                   Class="my-7" />
             }
             else
             {
                 <div class="d-flex">
                     <MudIcon Class="mr-2"
-                     Icon="@Icons.Material.Filled.SmartToy"
-                     Color="Color.Secondary"
-                     Size="Size.Small" />
+                             Icon="@Icons.Material.Filled.SmartToy"
+                             Color="Color.Secondary"
+                             Size="Size.Small" />
                     <MudText Typo="Typo.body1">@_currentAnswer.ToString()</MudText>
                 </div>
             }
