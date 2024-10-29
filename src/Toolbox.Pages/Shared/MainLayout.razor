@@ -17,7 +17,6 @@
     <MudAppBar Elevation="1" Dense="true" Color="Color.Dark">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudSpacer />
-
         @if (!PlatformSettings.IsApp)
         {
             <MudMenu Label="下载客户端"
@@ -68,12 +67,7 @@
         </MudHidden>
         <MudIconButton Class="ml-3" Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/JiuLing-zhang" Target="_blank" />
     </MudAppBar>
-    <MudDrawer @bind-Open="@open" Elevation="1">
-        <MudDrawerHeader>
-            <div onclick="@(()=>GotoIndex())" class="cursor-pointer">
-                <MudImage Src="_content/Toolbox.Pages/images/main-ascii.png" Width="80"></MudImage>
-            </div>
-        </MudDrawerHeader>
+    <MudDrawer @bind-Open="@open" ClipMode="DrawerClipMode.Always" Elevation="2">
         <NavMenu />
     </MudDrawer>
     <MudMainContent>
